@@ -146,7 +146,7 @@ namespace MyGame
 
 
 
-
+                                                                                        
 
     public class Boolean
     {
@@ -195,6 +195,71 @@ namespace MyGame
             return item;
         }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public class Camera
+    {
+        public Vector2 Center { get; set; }
+
+        private Vector2 _quarterScreen;
+        public Vector2 GetTopLeft() => Center - _quarterScreen;
+        public Camera(GraphicsDeviceManager graphicsDeviceManager)
+        {
+            _quarterScreen = new Vector2(graphicsDeviceManager.PreferredBackBufferWidth / 2, graphicsDeviceManager.PreferredBackBufferHeight / 2);
+        }
+
+
+        public Camera(Rectangle rectangle, Vector2 center)
+        {
+            this.Center = center;
+            _quarterScreen = new Vector2(rectangle.Width / 2, rectangle.Height / 2);
+        }
+
+        public void MoveToward(Vector2 target, float deltaTimeInMs, float movePercentage = 0.02f)
+        {
+            Vector2 differenceInPosition = target - Center;
+
+            differenceInPosition *= movePercentage;
+
+            var fractionOfPassedTime = deltaTimeInMs / 10;
+
+            Center += differenceInPosition * fractionOfPassedTime;
+
+            if ((target - Center).Length() < movePercentage)  
+            {
+                Center = target;
+            }
+        }
+
+
+
+    }
+
+
+
+
+
+
+
+
+
 
 
     public class Character : Object
@@ -351,25 +416,55 @@ namespace MyGame
     { 
 
         public Texture2D Texture { get { return texture; } set { texture = value; } }
+        public Vector2 Position { get { return position; } set { position = value; } }
+        public Rectangle SourceRectangle { get { return sourceRectangle; } set { sourceRectangle = value; } }
+        public Color Color { get { return color; } set { color = value; } }
+        public float Rotation { get { return rotation; } set { rotation = value; } }
+        public Vector2 Origin { get { return origin; } set { origin = value; } }
+        public Vector2 Scale { get { return scale; } set { scale = value; } }
+        public SpriteEffects Effects { get { return effects; } set { effects = value; } }
+        public float LayerDepth { get { return layerDepth; } set { layerDepth = value; } }
         public bool Hidden { get { return hidden; } set { hidden = value; } }
 
 
 
 
-        public Color Color { get { return color; } set { color = value; } }
+
         public byte Opacity { get { return color.A; } set { color.A = value; } }
 
 
         private bool hidden = false;
-        private Texture2D texture = null;
-        private Color color = Color.White;
+
+        
 
         public Vector2 Velocity { get { return velocity; } set { velocity = value; } }
         private Vector2 velocity = Vector2.Zero;
 
 
-        public Vector2 Position { get { return position; } set { position = value; } }
+
+        private Texture2D texture = null;
         private Vector2 position = Vector2.Zero;
+        private Rectangle sourceRectangle = Rectangle.Empty;
+        private Color color = Color.White;
+        private float rotation = 0.0f;
+        private Vector2 origin = Vector2.Zero;
+        private Vector2 scale = Vector2.One;
+        private SpriteEffects effects = SpriteEffects.None;
+        private float layerDepth = 0.0f;
+
+
+
+
+
+
+        public bool AffectedByGravity { get { return affectedByGravity; } set { affectedByGravity = value; } }
+        private bool affectedByGravity;
+
+
+
+
+
+
         public virtual void Update(GameTime gameTime) {}
         public void SetOpacity(float opacity)
         {
@@ -403,13 +498,20 @@ namespace MyGame
         private static Dictionary<String, Texture2D> textures = new Dictionary<string, Texture2D>();
         //private static Dictionary<String, Song> songs = new Dictionary<string, Song>();
 
+
+        public static Dictionary<String, Texture2D> GetTextures()
+        {
+            return textures;
+        }
+
+
         public static Texture2D GetTexture(string name)
         {
             textures.TryGetValue(name, out var texture);
             return texture;
         }
 
-        public static void LoadTextures(ContentManager contentManager, string path = "Content")
+        public static void LoadTextures(ContentManager contentManager, string path = "Content/assets/textures")
         {
             /*
              
@@ -432,6 +534,7 @@ namespace MyGame
              
              
              */
+            return;
             string newPath = path;
             foreach (var file in System.IO.Directory.GetFiles(path))
             {
@@ -454,6 +557,17 @@ namespace MyGame
 
 
         }
+
+
+
+
+        public static void LoadAudio(ContentManager contentManager, string path = "Content/assets/audio")
+        {
+
+        }
+
+
+
     }
 
 
@@ -481,6 +595,9 @@ namespace MyGame
         private List<Object> objects = new List<Object>();
         private List<Object> objectsToRemove = new List<Object>();
 
+        private Camera mainCamera;
+
+
         public void Destroy(Object obj)
         {
             objectsToRemove.Add(obj);
@@ -490,12 +607,15 @@ namespace MyGame
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
+            _graphics.SynchronizeWithVerticalRetrace = false;
+            IsFixedTimeStep = false;
+            _graphics.ApplyChanges();
         }
 
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
-
+            mainCamera = new Camera(_graphics);
             base.Initialize();
         }
 
@@ -508,7 +628,7 @@ namespace MyGame
 
         protected override void Update(GameTime gameTime)
         {
-            Console.WriteLine(AssetManager.GetTexture("Screenshot_1"));
+            Console.WriteLine(1.0 / gameTime.ElapsedGameTime.TotalSeconds);
             
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
@@ -529,8 +649,33 @@ namespace MyGame
             GraphicsDevice.Clear(Color.MonoGameOrange);
 
             // TODO: Add your drawing code here
+            Matrix transform = Matrix.CreateTranslation(-mainCamera.GetTopLeft().X, -mainCamera.GetTopLeft().Y, 0);
+
+            _spriteBatch.Begin(SpriteSortMode.Immediate, transformMatrix: transform);
+            
+
+
+
+            foreach (Object obj in objects)
+            {
+                _spriteBatch.Draw(
+                    obj.Texture,
+                    obj.Position,
+                    obj.SourceRectangle,
+                    obj.Color,
+                    obj.Rotation,
+                    obj.Origin,
+                    obj.Scale,
+                    obj.Effects,
+                    obj.LayerDepth
+                    );
+            }
 
             base.Draw(gameTime);
+            _spriteBatch.End();
+
+
+
         }
     }
 }
