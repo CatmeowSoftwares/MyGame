@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace MyGame
@@ -47,7 +48,6 @@ namespace MyGame
         }
         private static void ScanForKonamiCode()
         {
-            Console.WriteLine(konamiCodeIndex);
 
 
             var pressedKeys = currentKeyboardState.GetPressedKeys();
@@ -511,45 +511,32 @@ namespace MyGame
             return texture;
         }
 
-        public static void LoadTextures(ContentManager contentManager, string path = "Content/assets/textures")
+        public static void LoadTextures(ref ContentManager contentManager, string path = "Content/Textures")
         {
-            /*
-             
-             
-             foreach (file in files.readFiles())
-            {
-                if (file == folder)
-                {
-                    string newFolder = folder + file.name();
-                    LoadTextures(contentManager, newFolder);
-                }
-                if (file == png || file == xnb)
-                {
-                    Texture2D texture = contentManager.Load(folder + file.GetName);
-                    textures.Add(file.GetFileName().RemoveLast4Chars(), texture);
-                }
-            }
-             
-             
-             
-             
-             */
-            return;
             string newPath = path;
-            foreach (var file in System.IO.Directory.GetFiles(path))
+            string[] paths = System.IO.Directory.GetFiles(path);
+            string[] directories = System.IO.Directory.GetDirectories(path);
+            foreach (var file in paths)
             {
 
-                if (file.Substring(file.Length - 4) == ".xnb")
+                try
                 {
-                    Texture2D texture = contentManager.Load<Texture2D>(file);
-                    textures.Add(file.Remove(file.Length - 4), texture);
+                    var relativePath = Path.GetRelativePath(contentManager.RootDirectory, file);
+                    relativePath = relativePath.Replace("\\", "/");
+                    var textureName = Path.GetFileNameWithoutExtension(file);
+                    Texture2D texture = contentManager.Load<Texture2D>(relativePath.Replace(".xnb", ""));
+                    textures.Add(textureName, texture);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
                 }
 
             }
 
-            foreach (var file in System.IO.Directory.GetDirectories(newPath))
+            foreach (var file in directories)
             {
-                LoadTextures(contentManager, newPath);
+                LoadTextures(ref contentManager, newPath + "/" + file);
               
 
             }
@@ -561,7 +548,7 @@ namespace MyGame
 
 
 
-        public static void LoadAudio(ContentManager contentManager, string path = "Content/assets/audio")
+        public static void LoadAudio(ContentManager contentManager, string path = "Content/Assets/Audio")
         {
 
         }
@@ -597,13 +584,15 @@ namespace MyGame
 
         private Camera mainCamera;
 
-
+        private Object jellyshocker;
+        private Vector2 cameraPos = Vector2.Zero;
         public void Destroy(Object obj)
         {
             objectsToRemove.Add(obj);
         }
         public Main()
         {
+            
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
@@ -614,6 +603,8 @@ namespace MyGame
 
         protected override void Initialize()
         {
+            jellyshocker = new Object();
+            _contentManager = new ContentManager(Services, Content.RootDirectory);
             // TODO: Add your initialization logic here
             mainCamera = new Camera(_graphics);
             base.Initialize();
@@ -622,19 +613,37 @@ namespace MyGame
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-            AssetManager.LoadTextures(_contentManager);
+            AssetManager.LoadTextures(ref _contentManager);
+
+            jellyshocker.Texture = AssetManager.GetTexture("jellyshocker");
+            jellyshocker.Scale = new Vector2(0.25f, 0.25f);
             // TODO: use this.Content to load your game content here
         }
 
         protected override void Update(GameTime gameTime)
         {
-            Console.WriteLine(1.0 / gameTime.ElapsedGameTime.TotalSeconds);
             
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
             Input.UpdateInput();
+            if (Input.IsKeyDown(Keys.A))
+            {
+                cameraPos.X -= (float)(100 * gameTime.ElapsedGameTime.TotalSeconds);
+            }
+            else if (Input.IsKeyDown(Keys.D))
+            {
+                cameraPos.X += (float)(100 * gameTime.ElapsedGameTime.TotalSeconds);
+            }
+            if (Input.IsKeyDown(Keys.W))
+            {
+                cameraPos.Y -= (float)(100 * gameTime.ElapsedGameTime.TotalSeconds);
+            }
+            else if (Input.IsKeyDown(Keys.S))
+            {
+                cameraPos.Y += (float)(100 * gameTime.ElapsedGameTime.TotalSeconds);
+            }
             // TODO: Add your update logic here
-            
+            mainCamera.MoveToward(cameraPos, 1.0f);
 
             foreach (var obj in objectsToRemove)
             {
@@ -652,9 +661,9 @@ namespace MyGame
             Matrix transform = Matrix.CreateTranslation(-mainCamera.GetTopLeft().X, -mainCamera.GetTopLeft().Y, 0);
 
             _spriteBatch.Begin(SpriteSortMode.Immediate, transformMatrix: transform);
-            
 
 
+            _spriteBatch.Draw(jellyshocker.Texture, Vector2.Zero, Color.White);
 
             foreach (Object obj in objects)
             {
