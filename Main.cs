@@ -2,7 +2,6 @@
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using Microsoft.Xna.Framework.Media;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -131,19 +130,6 @@ namespace MyGame
 
 
 
-    public class Cheats
-    {
-        private void KillEveryone()
-        {
-            List<Object> objects = new List<Object>();
-            foreach (var character in objects.OfType<Character>())
-            {
-                character.Health = 0;
-            }
-        }
-    }
-
-
 
 
 
@@ -181,7 +167,34 @@ namespace MyGame
 
 
 
+    public class Cheats
+    {
+        private static bool canCheat = false;
+        private static bool cheating = false;
+        private static bool immune = false;
+        private static Player _player;
+        public static void EnableCheats(Player player)
+        {
+            canCheat = true;
+            cheating = true;
+            _player = player;
+        }
+        public static void DisableCheats()
+        {
+            _player = null;
+        }
 
+        private static T GetItem<T>()
+        {
+            return default(T);
+        }
+        private static Item GetItem(string name)
+        {
+            Type type = Type.GetType(name);
+            Item item = (Item)Activator.CreateInstance(type);
+            return item;
+        }
+    }
 
 
     public class Character : Object
@@ -190,26 +203,95 @@ namespace MyGame
         private float health = 100.0f;
 
 
+
         public void Die()
         {
            
         }
     }
+
+
+    public class Animation
+    {
+        public int frame;
+    }
+
     public class Player : Character
     {
-        public static void Move()
-        {
+        public string Name { get { return name; } set { name = value; } }
+        private string name = "";
 
-            switch (Keyboard.GetState().IsKeyDown(Keys.A))
+
+
+
+        private Item[] items = new Item[16];
+        
+
+
+        public Item[] Items { get { return items; }}
+        private Item currentItemInCursor = null;
+
+
+        public override void Update(GameTime gameTime)
+        {
+            if (currentItemInCursor != null)
             {
-                case true:
-                    break;
+                if (currentItemInCursor is Item)
+                {
+                    var mouse = Mouse.GetState();
+                    currentItemInCursor.Position = new Vector2(mouse.X, mouse.Y);
+                }
             }
+        }
+
+
+        public void Move()
+        {
+            if (Input.IsKeyDown(Keys.A))
+            {
+                Vector2 vel = Velocity;
+                vel.X = -100;
+                Velocity = vel;
+            }
+            else if(Input.IsKeyDown(Keys.D))
+            {
+                Vector2 vel = Velocity;
+                vel.X = 100;
+                Velocity = vel;
+            }
+
+            if (Input.IsKeyPressed(Keys.Space))
+            {
+                Vector2 vel = Velocity;
+                vel.Y = 400;
+                Velocity = vel;
+            }
+        }
+        public void SetName(string name)
+        {
+            if (name == "Catmeow" || name == "Catmeow123" || name == "catmeow" || name == "catmeow123")
+            {
+                Cheats.EnableCheats(this);
+            }
+
+
+            this.name = name;
         }
 
 
 
 
+
+
+
+
+
+  
+
+    }
+
+    public class Item : Object 
+    {
 
     }
     public class Button : Object
@@ -221,6 +303,24 @@ namespace MyGame
         private bool pressed = false;
         private bool down = false;
 
+        private Rectangle rectangle = Rectangle.Empty;
+
+        public Button(int x, int y, int w, int h, byte r = 255, byte g = 255, byte b = 255, byte a = 255)
+        {
+            rectangle.X = x;
+            rectangle.Y = y;
+            rectangle.Width = w;
+            rectangle.Height = h;
+            
+        }
+        public Button(int x, int y, int w, int h, Texture2D texture)
+        {
+            rectangle.X = x;
+            rectangle.Y = y;
+            rectangle.Width = w;
+            rectangle.Height = h;
+            this.Texture = texture;
+        }
 
         public override void Update(GameTime gameTime)
         {
@@ -228,18 +328,18 @@ namespace MyGame
             {
                 return;
             }
-
-            if (Input.IsKeyDown(Keys.H))
+            if (rectangle.Contains(Mouse.GetState().Position))
             {
-                if (!hovering)
-                {
-                    pressed = true;
-                }
+                hovering = true;
+                pressed = !down;
+                down = Mouse.GetState().LeftButton == ButtonState.Pressed;
             }
-
-
-
-
+            else
+            {
+                hovering = false;
+                down = false;
+                pressed = false;
+            }
         }
 
 
@@ -252,7 +352,7 @@ namespace MyGame
 
         public Texture2D Texture { get { return texture; } set { texture = value; } }
         public bool Hidden { get { return hidden; } set { hidden = value; } }
-        public Vector2 Position { get { return position; } set { position = value; } }
+
 
 
 
@@ -262,10 +362,14 @@ namespace MyGame
 
         private bool hidden = false;
         private Texture2D texture = null;
-        private Vector2 position;
         private Color color = Color.White;
 
+        public Vector2 Velocity { get { return velocity; } set { velocity = value; } }
+        private Vector2 velocity = Vector2.Zero;
 
+
+        public Vector2 Position { get { return position; } set { position = value; } }
+        private Vector2 position = Vector2.Zero;
         public virtual void Update(GameTime gameTime) {}
         public void SetOpacity(float opacity)
         {
@@ -328,14 +432,9 @@ namespace MyGame
              
              
              */
-
+            string newPath = path;
             foreach (var file in System.IO.Directory.GetFiles(path))
             {
-                if ("" == "")
-                {
-                    string newPath = path + file;
-                    LoadTextures(contentManager, newPath);
-                }
 
                 if (file.Substring(file.Length - 4) == ".xnb")
                 {
@@ -344,6 +443,16 @@ namespace MyGame
                 }
 
             }
+
+            foreach (var file in System.IO.Directory.GetDirectories(newPath))
+            {
+                LoadTextures(contentManager, newPath);
+              
+
+            }
+
+
+
         }
     }
 
@@ -400,7 +509,8 @@ namespace MyGame
         protected override void Update(GameTime gameTime)
         {
             Console.WriteLine(AssetManager.GetTexture("Screenshot_1"));
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape) || Input.KonamiCodeActivated())
+            
+            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
             Input.UpdateInput();
             // TODO: Add your update logic here
@@ -408,6 +518,7 @@ namespace MyGame
 
             foreach (var obj in objectsToRemove)
             {
+                obj.Destroy();
                 objects.Remove(obj);
             }
             base.Update(gameTime);
