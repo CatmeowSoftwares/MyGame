@@ -258,11 +258,34 @@ namespace MyGame
 
 
 
+    public class PhysicsObject : Object
+    {
+
+
+        private bool physicsDisabled = false;
+
+        public Vector2 Velocity { get { return velocity; } set { velocity = value; } }
+        private Vector2 velocity = Vector2.Zero;
+
+        public bool AffectedByGravity { get { return affectedByGravity; } set { affectedByGravity = value; } }
+        private bool affectedByGravity = true;
+
+
+
+        public bool OnFloor { get { return onFloor; } set { onFloor = value; } }
+        private bool onFloor = false;
 
 
 
 
-    public class Character : Object
+
+
+
+    }
+
+
+
+    public class Character : PhysicsObject
     {
         public float Health { get { return health; } set { health = value; } }
         private float health = 100.0f;
@@ -271,7 +294,7 @@ namespace MyGame
 
         public void Die()
         {
-           
+
         }
     }
 
@@ -437,8 +460,7 @@ namespace MyGame
 
         
 
-        public Vector2 Velocity { get { return velocity; } set { velocity = value; } }
-        private Vector2 velocity = Vector2.Zero;
+
 
 
 
@@ -457,8 +479,7 @@ namespace MyGame
 
 
 
-        public bool AffectedByGravity { get { return affectedByGravity; } set { affectedByGravity = value; } }
-        private bool affectedByGravity;
+
 
 
 
@@ -536,6 +557,10 @@ namespace MyGame
 
             foreach (var file in directories)
             {
+                if (file[0] == '_')
+                {
+                    continue;
+                }
                 LoadTextures(ref contentManager, newPath + "/" + file);
               
 
@@ -582,6 +607,7 @@ namespace MyGame
         private List<Object> objects = new List<Object>();
         private List<Object> objectsToRemove = new List<Object>();
 
+        private static Player player;
         private Camera mainCamera;
 
         private Object jellyshocker;
@@ -603,6 +629,8 @@ namespace MyGame
 
         protected override void Initialize()
         {
+            player = new Player();
+            player.Texture = AssetManager.GetTexture("Player");
             jellyshocker = new Object();
             _contentManager = new ContentManager(Services, Content.RootDirectory);
             // TODO: Add your initialization logic here
@@ -622,35 +650,121 @@ namespace MyGame
 
         protected override void Update(GameTime gameTime)
         {
-            
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
-                Exit();
-            Input.UpdateInput();
-            if (Input.IsKeyDown(Keys.A))
+            try
             {
-                cameraPos.X -= (float)(100 * gameTime.ElapsedGameTime.TotalSeconds);
-            }
-            else if (Input.IsKeyDown(Keys.D))
-            {
-                cameraPos.X += (float)(100 * gameTime.ElapsedGameTime.TotalSeconds);
-            }
-            if (Input.IsKeyDown(Keys.W))
-            {
-                cameraPos.Y -= (float)(100 * gameTime.ElapsedGameTime.TotalSeconds);
-            }
-            else if (Input.IsKeyDown(Keys.S))
-            {
-                cameraPos.Y += (float)(100 * gameTime.ElapsedGameTime.TotalSeconds);
-            }
-            // TODO: Add your update logic here
-            mainCamera.MoveToward(cameraPos, 1.0f);
+                // process inputs -> process behaviors -> calculate velocities -> move entities -> resolve collisions -> render frame
 
-            foreach (var obj in objectsToRemove)
-            {
-                obj.Destroy();
-                objects.Remove(obj);
+
+                if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+                    Exit();
+
+                // process inputs
+                Input.UpdateInput();
+
+
+
+
+
+
+
+
+                // process behaviors
+
+
+
+
+
+
+
+                // calculate velocities
+                if (Input.IsKeyDown(Keys.A))
+                {
+                    Vector2 velocity = player.Velocity;
+                    velocity.X -= (float)(100 * gameTime.ElapsedGameTime.TotalSeconds);
+                    player.Velocity = velocity;
+                }
+                else if (Input.IsKeyDown(Keys.D))
+                {
+                    Vector2 velocity = player.Velocity;
+                    velocity.X += (float)(100 * gameTime.ElapsedGameTime.TotalSeconds);
+                    player.Velocity = velocity;
+                }
+                if (Input.IsKeyPressed(Keys.Space))
+                {
+                    Vector2 velocity = player.Velocity;
+                    velocity.Y = -400;
+                    player.Velocity = velocity;
+                }
+
+
+
+                /*
+                if (Input.IsKeyDown(Keys.W))
+                {
+                    cameraPos.Y -= (float)(100 * gameTime.ElapsedGameTime.TotalSeconds);
+                }
+                else if (Input.IsKeyDown(Keys.S))
+                {
+                    cameraPos.Y += (float)(100 * gameTime.ElapsedGameTime.TotalSeconds);
+                }
+                */
+
+
+
+                // move entities
+
+
+
+                foreach (var obj in objects.OfType<PhysicsObject>())
+                {
+                    Vector2 velocity = obj.Velocity;
+
+                    if (obj.AffectedByGravity)
+                    {
+                        if (!obj.OnFloor)
+                        {
+
+                            velocity.Y -= (float)(9.81 * 100 * gameTime.ElapsedGameTime.TotalSeconds);
+                        }
+                        else
+                        {
+                            velocity.Y = 0;
+                        }
+                    }
+
+
+                    obj.Velocity = velocity;
+                    obj.Position += obj.Velocity * (float)gameTime.ElapsedGameTime.TotalSeconds;
+                }
+
+
+
+
+                // resolve collision
+
+
+
+
+
+
+
+
+                // TODO: Add your update logic here
+                cameraPos = player.Position;
+                mainCamera.MoveToward(cameraPos, 1.0f);
+
+                foreach (var obj in objectsToRemove)
+                {
+                    obj.Destroy();
+                    objects.Remove(obj);
+                }
+
+                base.Update(gameTime);
             }
-            base.Update(gameTime);
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
 
         protected override void Draw(GameTime gameTime)
