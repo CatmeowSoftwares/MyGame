@@ -553,29 +553,22 @@ namespace MyGame
                 try
                 {
                     var relativePath = Path.GetRelativePath(contentManager.RootDirectory, file);
-                    relativePath = relativePath.Replace("\\", "/");
                     var textureName = Path.GetFileNameWithoutExtension(file);
                     Texture2D texture = contentManager.Load<Texture2D>(relativePath.Replace(".xnb", ""));
+                    Console.WriteLine(textureName + "      ||     " + relativePath);
                     textures.Add(textureName, texture);
+
+
+                    Console.WriteLine("Successfully loaded texture: " + textureName);
                 }
                 catch (Exception e)
                 {
+                    Console.WriteLine("Failed to load texture");
                     Console.WriteLine(e);
+                    
                 }
 
             }
-
-            foreach (var file in directories)
-            {
-                if (file[0] == '_')
-                {
-                    continue;
-                }
-                LoadTextures(ref contentManager, newPath + "/" + file);
-              
-
-            }
-
 
 
         }
@@ -640,10 +633,9 @@ namespace MyGame
         protected override void Initialize()
         {
             player = new Player();
-            player.Texture = AssetManager.GetTexture("Player");
+            
             jellyshocker = new Object();
-            objects.Add(player);
-            objects.Add(jellyshocker);
+            
             _contentManager = new ContentManager(Services, Content.RootDirectory);
             // TODO: Add your initialization logic here
             mainCamera = new Camera(_graphics);
@@ -655,8 +647,11 @@ namespace MyGame
             _spriteBatch = new SpriteBatch(GraphicsDevice);
             AssetManager.LoadTextures(ref _contentManager);
 
+            player.Texture = AssetManager.GetTexture("Player");
             jellyshocker.Texture = AssetManager.GetTexture("jellyshocker");
             jellyshocker.Scale = new Vector2(0.25f, 0.25f);
+            objects.Add(player);
+            objects.Add(jellyshocker);
             // TODO: use this.Content to load your game content here
         }
 
@@ -701,6 +696,12 @@ namespace MyGame
                     velocity.X += (float)(100 * gameTime.ElapsedGameTime.TotalSeconds);
                     player.Velocity = velocity;
                 }
+                else
+                {
+                    Vector2 velocity = player.Velocity;
+                    velocity.X = 0;
+                    player.Velocity = velocity;
+                }
                 if (Input.IsKeyPressed(Keys.Space))
                 {
                     Vector2 velocity = player.Velocity;
@@ -736,7 +737,7 @@ namespace MyGame
                         if (!obj.OnFloor)
                         {
 
-                            velocity.Y -= (float)(9.81 * 100 * gameTime.ElapsedGameTime.TotalSeconds);
+                            velocity.Y += (float)(9.81 * gameTime.ElapsedGameTime.TotalSeconds);
                         }
                         else
                         {
@@ -831,10 +832,9 @@ namespace MyGame
             _spriteBatch.Begin(SpriteSortMode.Immediate, transformMatrix: transform);
 
 
-            _spriteBatch.Draw(jellyshocker.Texture, Vector2.Zero, Color.White);
-
             foreach (Object obj in objects)
             {
+                if (obj.Hidden || obj.Texture == null) { Console.WriteLine("HIDDEN OR NO TEXTURE"); continue; }
                 _spriteBatch.Draw(
                     obj.Texture,
                     obj.Position,
