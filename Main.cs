@@ -285,6 +285,16 @@ namespace MyGame
 
 
 
+
+    public class Tile
+    {
+        public int Width {get {return width;}}
+        public int Height {get {return height;}}
+        private int width = 8;
+        private int height = 8;
+    }
+
+
     public class Character : PhysicsObject
     {
         public float Health { get { return health; } set { health = value; } }
@@ -476,8 +486,8 @@ namespace MyGame
 
 
 
-
-
+        public Rectangle Collider {get {return collider;} set {collider = value;}}
+        private Rectangle collider;
 
 
 
@@ -632,6 +642,8 @@ namespace MyGame
             player = new Player();
             player.Texture = AssetManager.GetTexture("Player");
             jellyshocker = new Object();
+            objects.Add(player);
+            objects.Add(jellyshocker);
             _contentManager = new ContentManager(Services, Content.RootDirectory);
             // TODO: Add your initialization logic here
             mainCamera = new Camera(_graphics);
@@ -743,10 +755,52 @@ namespace MyGame
                 // resolve collision
 
 
+                foreach (var objectA in objects.OfType<PhysicsObject>())
+                {
+                    foreach (var objectB in objects.OfType<PhysicsObject>())
+                    {
+                        if (objectA == objectB) { continue; }
+
+                        Rectangle a = objectA.Collider;
+                        Rectangle b = objectB.Collider;
+
+                        if (a.Intersects(b))
+                        {
+                            Rectangle intersect = Rectangle.Intersect(a, b);
+                            a.X -= intersect.Width/2;
+                            a.Y -= intersect.Height/2;
+                            b.X += intersect.Width/2;
+                            b.Y += intersect.Height/2;
+
+                        }
+
+                        else if (b.Intersects(a))
+                        {
+                            Rectangle intersect = Rectangle.Intersect(b, a);
+                            a.X += intersect.Width/2;
+                            a.Y += intersect.Height/2;
+                            b.X -= intersect.Width/2;
+                            b.Y -= intersect.Height/2;
+
+                        }
+                        
+                    
+                 
+                    }
+                }
 
 
+                foreach (var obj in objects)
+                {
+                    Rectangle rect = obj.Collider;
+                    Vector2 pos = obj.Position;
 
+                    rect.X = (int)pos.X;
+                    rect.Y = (int)pos.Y;
 
+                    obj.Collider = rect;
+                    obj.Position = pos;
+                }
 
 
                 // TODO: Add your update logic here
