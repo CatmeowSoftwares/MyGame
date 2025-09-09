@@ -319,8 +319,8 @@ namespace MyGame
         public string Name { get { return name; } set { name = value; } }
         private string name = "";
 
-
-
+        public float MoveSpeed { get { return moveSpeed; } set { moveSpeed = value; } } 
+        private float moveSpeed = 250.0f;
 
         private Item[] items = new Item[16];
         
@@ -448,7 +448,29 @@ namespace MyGame
     public class Object
     { 
 
-        public Texture2D Texture { get { return texture; } set { texture = value; } }
+        public Texture2D Texture 
+        {
+            get 
+            {
+        
+                return texture; 
+            } 
+            set 
+            { 
+                
+                if (value == null)
+                {
+                    throw new System.Exception("Failed to set Texture");
+                }
+                
+                texture = value; 
+            } 
+        }
+
+
+
+
+
         public Vector2 Position { get { return position; } set { position = value; } }
         public Rectangle SourceRectangle { get { return sourceRectangle; } set { sourceRectangle = value; } }
         public Color Color { get { return color; } set { color = value; } }
@@ -539,10 +561,14 @@ namespace MyGame
         public static Texture2D GetTexture(string name)
         {
             textures.TryGetValue(name, out var texture);
+            if (texture == null)
+            {
+                throw new System.Exception("Failed to get texture!");
+            }
             return texture;
         }
 
-        public static void LoadTextures(ref ContentManager contentManager, string path = "Content/Textures")
+        public static void LoadTextures(ContentManager contentManager, string path = "Content/bin/Assets/Textures")
         {
             string newPath = path;
             string[] paths = System.IO.Directory.GetFiles(path);
@@ -554,11 +580,9 @@ namespace MyGame
                 {
                     var relativePath = Path.GetRelativePath(contentManager.RootDirectory, file);
                     var textureName = Path.GetFileNameWithoutExtension(file);
-                    Texture2D texture = contentManager.Load<Texture2D>(relativePath.Replace(".xnb", ""));
-                    Console.WriteLine(textureName + "      ||     " + relativePath);
+                    var texturePath = relativePath.Replace(".xnb", null);
+                    Texture2D texture = contentManager.Load<Texture2D>(texturePath);
                     textures.Add(textureName, texture);
-
-
                     Console.WriteLine("Successfully loaded texture: " + textureName);
                 }
                 catch (Exception e)
@@ -578,7 +602,29 @@ namespace MyGame
 
         public static void LoadAudio(ContentManager contentManager, string path = "Content/Assets/Audio")
         {
+            return;
+            string newPath = path;
+            string[] paths = System.IO.Directory.GetFiles(path);
+            string[] directories = System.IO.Directory.GetDirectories(path);
+            foreach (var file in paths)
+            {
 
+                try
+                {
+                    var relativePath = Path.GetRelativePath(contentManager.RootDirectory, file);
+                    var audioName = Path.GetFileNameWithoutExtension(file);
+                    var audioPath = relativePath.Replace(".ogg", null);
+                    Texture2D texture = contentManager.Load<Texture2D>(audioPath);
+                    textures.Add(audioName, texture);
+                    Console.WriteLine("Successfully loaded audio: " + audioName);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Failed to load audio");
+                    Console.WriteLine(e);
+                    
+                }
+            }
         }
 
 
@@ -633,9 +679,8 @@ namespace MyGame
         protected override void Initialize()
         {
             player = new Player();
-            
             jellyshocker = new Object();
-            
+            jellyshocker.Position = new Vector2(-100, -200);
             _contentManager = new ContentManager(Services, Content.RootDirectory);
             // TODO: Add your initialization logic here
             mainCamera = new Camera(_graphics);
@@ -645,13 +690,21 @@ namespace MyGame
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-            AssetManager.LoadTextures(ref _contentManager);
-
-            player.Texture = AssetManager.GetTexture("Player");
-            jellyshocker.Texture = AssetManager.GetTexture("jellyshocker");
-            jellyshocker.Scale = new Vector2(0.25f, 0.25f);
+            AssetManager.LoadTextures(_contentManager);
+            try
+            {
+                player.Texture = AssetManager.GetTexture("Player");
+                jellyshocker.Texture = AssetManager.GetTexture("jellyshocker");
+                Console.WriteLine("Setting textures successful!");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+            jellyshocker.Scale = new Vector2(0.125f);
             objects.Add(player);
             objects.Add(jellyshocker);
+            Console.WriteLine(player.Texture);
             // TODO: use this.Content to load your game content here
         }
 
@@ -687,13 +740,13 @@ namespace MyGame
                 if (Input.IsKeyDown(Keys.A))
                 {
                     Vector2 velocity = player.Velocity;
-                    velocity.X -= (float)(100 * gameTime.ElapsedGameTime.TotalSeconds);
+                    velocity.X = (float)(player.MoveSpeed * gameTime.ElapsedGameTime.TotalSeconds);
                     player.Velocity = velocity;
                 }
                 else if (Input.IsKeyDown(Keys.D))
                 {
                     Vector2 velocity = player.Velocity;
-                    velocity.X += (float)(100 * gameTime.ElapsedGameTime.TotalSeconds);
+                    velocity.X = (float)(100 * gameTime.ElapsedGameTime.TotalSeconds);
                     player.Velocity = velocity;
                 }
                 else
@@ -737,7 +790,7 @@ namespace MyGame
                         if (!obj.OnFloor)
                         {
 
-                            velocity.Y += (float)(9.81 * gameTime.ElapsedGameTime.TotalSeconds);
+                            //velocity.Y += (float)(9.81 * gameTime.ElapsedGameTime.TotalSeconds);
                         }
                         else
                         {
@@ -824,7 +877,7 @@ namespace MyGame
 
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.MonoGameOrange);
+            GraphicsDevice.Clear(Color.CornflowerBlue);
 
             // TODO: Add your drawing code here
             Matrix transform = Matrix.CreateTranslation(-mainCamera.GetTopLeft().X, -mainCamera.GetTopLeft().Y, 0);
@@ -834,11 +887,14 @@ namespace MyGame
 
             foreach (Object obj in objects)
             {
-                if (obj.Hidden || obj.Texture == null) { Console.WriteLine("HIDDEN OR NO TEXTURE"); continue; }
+                if (obj.Hidden || obj.Texture == null) { continue; }
+                //Console.WriteLine(obj.Texture);
+                try
+                {
                 _spriteBatch.Draw(
                     obj.Texture,
                     obj.Position,
-                    obj.SourceRectangle,
+                    obj.SourceRectangle == Rectangle.Empty ? null : obj.SourceRectangle,
                     obj.Color,
                     obj.Rotation,
                     obj.Origin,
@@ -846,6 +902,11 @@ namespace MyGame
                     obj.Effects,
                     obj.LayerDepth
                     );
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
             }
 
             base.Draw(gameTime);

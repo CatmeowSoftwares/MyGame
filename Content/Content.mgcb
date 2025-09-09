@@ -23,7 +23,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:../Assets/Textures/jellyshocker.png;Textures/jellyshocker.png
+/build:../Assets/Textures/jellyshocker.png
 
 #begin ../Assets/Textures/Player.png
 /importer:TextureImporter
@@ -35,7 +35,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:../Assets/Textures/Player.png;Textures/Player.png
+/build:../Assets/Textures/Player.png
 
 #begin ../Assets/Textures/Screenshot_1.png
 /importer:TextureImporter
@@ -47,5 +47,5 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:../Assets/Textures/Screenshot_1.png;Textures/Screenshot_1.png
+/build:../Assets/Textures/Screenshot_1.png
 
