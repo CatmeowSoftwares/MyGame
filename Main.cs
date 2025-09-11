@@ -83,8 +83,8 @@ namespace MyGame
 
 
 
-        public static KeyboardState currentKeyboardState;
-        public static KeyboardState previousKeyboardState;
+        private static KeyboardState currentKeyboardState;
+        private static KeyboardState previousKeyboardState;
 
         public static bool IsAnyKeyPressed()
         {
@@ -169,14 +169,9 @@ namespace MyGame
 
     public class Cheats
     {
-        private static bool canCheat = false;
-        private static bool cheating = false;
-        private static bool immune = false;
         private static Player _player;
         public static void EnableCheats(Player player)
         {
-            canCheat = true;
-            cheating = true;
             _player = player;
         }
         public static void DisableCheats()
@@ -258,10 +253,10 @@ namespace MyGame
 
 
 
-    public class PhysicsObject : Object
+    public class PhysicsObject : GameObject
     {
 
-
+        public bool PhysicsDisabled { get { return physicsDisabled; } set { physicsDisabled = value; } }
         private bool physicsDisabled = false;
 
         public Vector2 Velocity { get { return velocity; } set { velocity = value; } }
@@ -311,7 +306,23 @@ namespace MyGame
 
     public class Animation
     {
-        public int frame;
+
+
+
+        private static int frame;
+        private static float elapsed;
+        private static int fps = 10;
+        private static float durationPerFrame = 100.0f;
+
+        public static void UpdateAnimations(GameTime gameTime)
+        {
+            elapsed += (float)gameTime.ElapsedGameTime.TotalSeconds;
+            if (elapsed >= durationPerFrame || elapsed/60 <= fps)
+            {
+                ++frame;
+            }
+
+        }
     }
 
     public class Player : Character
@@ -392,8 +403,23 @@ namespace MyGame
     {
 
     }
-    public class Button : Object
+    public class UIObject : Object
     {
+
+
+        
+        public int Width { get { return rectangle.Width;} set { rectangle.Width = value; }}
+        public int Height { get { return rectangle.Height; } set { rectangle.Height = value; } }
+
+
+        public Rectangle Rectangle { get { return rectangle;} set { rectangle = value;}}
+        private Rectangle rectangle = Rectangle.Empty;
+
+    }
+    public class Button : UIObject
+    {
+
+
         public bool Hovering { get { return hovering; } set { hovering = value; } }
         public bool Pressed { get { return pressed; } set { pressed = value; } }
         public bool Down { get { return down; } set { down = value; } }
@@ -401,23 +427,9 @@ namespace MyGame
         private bool pressed = false;
         private bool down = false;
 
-        private Rectangle rectangle = Rectangle.Empty;
+        public Button()
+        {
 
-        public Button(int x, int y, int w, int h, byte r = 255, byte g = 255, byte b = 255, byte a = 255)
-        {
-            rectangle.X = x;
-            rectangle.Y = y;
-            rectangle.Width = w;
-            rectangle.Height = h;
-            
-        }
-        public Button(int x, int y, int w, int h, Texture2D texture)
-        {
-            rectangle.X = x;
-            rectangle.Y = y;
-            rectangle.Width = w;
-            rectangle.Height = h;
-            this.Texture = texture;
         }
 
         public override void Update(GameTime gameTime)
@@ -426,18 +438,20 @@ namespace MyGame
             {
                 return;
             }
+
+            Rectangle rectangle = this.Rectangle;
+
+            hovering = false;
+            down = false;
+            pressed = false;
+
             if (rectangle.Contains(Mouse.GetState().Position))
             {
                 hovering = true;
                 pressed = !down;
                 down = Mouse.GetState().LeftButton == ButtonState.Pressed;
             }
-            else
-            {
-                hovering = false;
-                down = false;
-                pressed = false;
-            }
+
         }
 
 
@@ -445,26 +459,33 @@ namespace MyGame
 
 
     }
-    public class Object
-    { 
 
-        public Texture2D Texture 
+
+    public class GameObject : Object
+    {
+
+    }
+
+    public class Object
+    {
+
+        public Texture2D Texture
         {
-            get 
+            get
             {
-        
-                return texture; 
-            } 
-            set 
-            { 
-                
+
+                return texture;
+            }
+            set
+            {
+
                 if (value == null)
                 {
                     throw new System.Exception("Failed to set Texture");
                 }
-                
-                texture = value; 
-            } 
+
+                texture = value;
+            }
         }
 
 
@@ -490,7 +511,7 @@ namespace MyGame
 
         private bool hidden = false;
 
-        
+
 
 
 
@@ -508,7 +529,7 @@ namespace MyGame
 
 
 
-        public Rectangle Collider {get {return collider;} set {collider = value;}}
+        public Rectangle Collider { get { return collider; } set { collider = value; } }
         private Rectangle collider;
 
 
@@ -518,7 +539,7 @@ namespace MyGame
 
 
 
-        public virtual void Update(GameTime gameTime) {}
+        public virtual void Update(GameTime gameTime) { }
         public void SetOpacity(float opacity)
         {
             SetOpacity((byte)(opacity * 255));
@@ -661,13 +682,93 @@ namespace MyGame
 
         private Object jellyshocker;
         private Vector2 cameraPos = Vector2.Zero;
+
+
+        private static Texture2D colliderPixel;
+
+        private Button button;
+
+
+
+
+        private Texture2D CreateRectangleTexture(int w, int h)
+        {
+            Color[] colors = new Color[w * h];
+            for (int i = 0; i < w * h; ++i)
+            {
+                colors[i] = new Color(255, 0, 255);
+            }
+            Texture2D texture = new Texture2D(GraphicsDevice, w, h);
+            texture.SetData(colors);
+            return texture;
+        }
+
+
         public void Destroy(Object obj)
         {
             objectsToRemove.Add(obj);
         }
+        private void DrawUI(SpriteBatch spriteBatch)
+        {
+            foreach (var obj in objects.OfType<UIObject>())
+            {
+                if (obj.Hidden || obj.Texture == null) { continue; }
+
+                spriteBatch.Draw(
+                    obj.Texture,
+                    obj.Position,
+                    obj.SourceRectangle == Rectangle.Empty ? null : obj.SourceRectangle,
+                    obj.Color,
+                    obj.Rotation,
+                    obj.Origin,
+                    obj.Scale,
+                    obj.Effects,
+                    obj.LayerDepth
+                    );
+            }
+        }
+        private void DrawGameObjects(SpriteBatch spriteBatch)
+        {
+             foreach (Object obj in objects.OfType<GameObject>())
+            {
+                if (obj.Hidden || obj.Texture == null) { continue; }
+
+
+                spriteBatch.Draw(
+                    obj.Texture,
+                    obj.Position,
+                    obj.SourceRectangle == Rectangle.Empty ? null : obj.SourceRectangle,
+                    obj.Color,
+                    obj.Rotation,
+                    obj.Origin,
+                    obj.Scale,
+                    obj.Effects,
+                    obj.LayerDepth
+                    );
+
+
+            }
+        }
+
+        private void DrawColliders(SpriteBatch spriteBatch)
+        {
+            foreach (var obj in objects)
+            {
+                var collider = obj.Collider;
+                if (collider == Rectangle.Empty) { continue; }
+
+                spriteBatch.Draw(colliderPixel, collider, new Color(255, 0, 0, 64));
+            }
+        }
+
+
+
+
+
+
         public Main()
         {
-            
+
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
@@ -678,6 +779,11 @@ namespace MyGame
 
         protected override void Initialize()
         {
+            button = new Button();
+            button.Position = new Vector2(100.0f, 100.0f);
+            button.Rectangle = new Rectangle(100, 100, 100, 100);
+            colliderPixel = new Texture2D(GraphicsDevice, 1, 1);
+            colliderPixel.SetData(new Color[] { Color.White });
             player = new Player();
             jellyshocker = new Object();
             jellyshocker.Position = new Vector2(-100, -200);
@@ -701,25 +807,31 @@ namespace MyGame
             {
                 Console.WriteLine(e);
             }
+            jellyshocker.Opacity = 1;
             jellyshocker.Scale = new Vector2(0.125f);
+            button.Texture = CreateRectangleTexture(button.Width, button.Height);
             objects.Add(player);
-            objects.Add(jellyshocker);
-            Console.WriteLine(player.Texture);
+            //objects.Add(jellyshocker);
+            objects.Add(button);
             // TODO: use this.Content to load your game content here
         }
 
         protected override void Update(GameTime gameTime)
         {
-            try
+            // process inputs -> process behaviors -> calculate velocities -> move entities -> resolve collisions -> render frame
+
+
+            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape) || button.Pressed)
+                Exit();
+
+            // process inputs
+            Input.UpdateInput();
+            
+
+            foreach (var button in objects.OfType<Button>())
             {
-                // process inputs -> process behaviors -> calculate velocities -> move entities -> resolve collisions -> render frame
-
-
-                if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
-                    Exit();
-
-                // process inputs
-                Input.UpdateInput();
+                button.Update(gameTime);
+            }
 
 
 
@@ -728,7 +840,7 @@ namespace MyGame
 
 
 
-                // process behaviors
+            // process behaviors
 
 
 
@@ -736,55 +848,56 @@ namespace MyGame
 
 
 
-                // calculate velocities
-                if (Input.IsKeyDown(Keys.A))
+            // calculate velocities
+            if (Input.IsKeyDown(Keys.A))
+            {
+                Vector2 velocity = player.Velocity;
+                velocity.X = (float)(player.MoveSpeed * gameTime.ElapsedGameTime.TotalSeconds);
+                player.Velocity = velocity;
+            }
+            else if (Input.IsKeyDown(Keys.D))
+            {
+                Vector2 velocity = player.Velocity;
+                velocity.X = (float)(player.MoveSpeed * gameTime.ElapsedGameTime.TotalSeconds);
+                player.Velocity = velocity;
+            }
+            else
+            {
+                Vector2 velocity = player.Velocity;
+                velocity.X = 0;
+                player.Velocity = velocity;
+            }
+            if (Input.IsKeyPressed(Keys.Space))
+            {
+                Vector2 velocity = player.Velocity;
+                velocity.Y = -400;
+                player.Velocity = velocity;
+            }
+
+
+
+            /*
+            if (Input.IsKeyDown(Keys.W))
+            {
+                cameraPos.Y -= (float)(100 * gameTime.ElapsedGameTime.TotalSeconds);
+            }
+            else if (Input.IsKeyDown(Keys.S))
+            {
+                cameraPos.Y += (float)(100 * gameTime.ElapsedGameTime.TotalSeconds);
+            }
+            */
+
+
+
+            // move entities
+
+
+
+            foreach (var obj in objects.OfType<PhysicsObject>())
+            {
+                Vector2 velocity = obj.Velocity;
+                if (!obj.PhysicsDisabled)
                 {
-                    Vector2 velocity = player.Velocity;
-                    velocity.X = (float)(player.MoveSpeed * gameTime.ElapsedGameTime.TotalSeconds);
-                    player.Velocity = velocity;
-                }
-                else if (Input.IsKeyDown(Keys.D))
-                {
-                    Vector2 velocity = player.Velocity;
-                    velocity.X = (float)(100 * gameTime.ElapsedGameTime.TotalSeconds);
-                    player.Velocity = velocity;
-                }
-                else
-                {
-                    Vector2 velocity = player.Velocity;
-                    velocity.X = 0;
-                    player.Velocity = velocity;
-                }
-                if (Input.IsKeyPressed(Keys.Space))
-                {
-                    Vector2 velocity = player.Velocity;
-                    velocity.Y = -400;
-                    player.Velocity = velocity;
-                }
-
-
-
-                /*
-                if (Input.IsKeyDown(Keys.W))
-                {
-                    cameraPos.Y -= (float)(100 * gameTime.ElapsedGameTime.TotalSeconds);
-                }
-                else if (Input.IsKeyDown(Keys.S))
-                {
-                    cameraPos.Y += (float)(100 * gameTime.ElapsedGameTime.TotalSeconds);
-                }
-                */
-
-
-
-                // move entities
-
-
-
-                foreach (var obj in objects.OfType<PhysicsObject>())
-                {
-                    Vector2 velocity = obj.Velocity;
-
                     if (obj.AffectedByGravity)
                     {
                         if (!obj.OnFloor)
@@ -797,123 +910,105 @@ namespace MyGame
                             velocity.Y = 0;
                         }
                     }
-
-
-                    obj.Velocity = velocity;
-                    obj.Position += obj.Velocity * (float)gameTime.ElapsedGameTime.TotalSeconds;
                 }
 
-
-
-
-                // resolve collision
-
-
-                foreach (var objectA in objects.OfType<PhysicsObject>())
-                {
-                    foreach (var objectB in objects.OfType<PhysicsObject>())
-                    {
-                        if (objectA == objectB) { continue; }
-
-                        Rectangle a = objectA.Collider;
-                        Rectangle b = objectB.Collider;
-
-                        if (a.Intersects(b))
-                        {
-                            Rectangle intersect = Rectangle.Intersect(a, b);
-                            a.X -= intersect.Width/2;
-                            a.Y -= intersect.Height/2;
-                            b.X += intersect.Width/2;
-                            b.Y += intersect.Height/2;
-
-                        }
-
-                        else if (b.Intersects(a))
-                        {
-                            Rectangle intersect = Rectangle.Intersect(b, a);
-                            a.X += intersect.Width/2;
-                            a.Y += intersect.Height/2;
-                            b.X -= intersect.Width/2;
-                            b.Y -= intersect.Height/2;
-
-                        }
-                        
-                    
-                 
-                    }
-                }
-
-
-                foreach (var obj in objects)
-                {
-                    Rectangle rect = obj.Collider;
-                    Vector2 pos = obj.Position;
-
-                    rect.X = (int)pos.X;
-                    rect.Y = (int)pos.Y;
-
-                    obj.Collider = rect;
-                    obj.Position = pos;
-                }
-
-
-                // TODO: Add your update logic here
-                cameraPos = player.Position;
-                mainCamera.MoveToward(cameraPos, 1.0f);
-
-                foreach (var obj in objectsToRemove)
-                {
-                    obj.Destroy();
-                    objects.Remove(obj);
-                }
-
-                base.Update(gameTime);
+                obj.Velocity = velocity;
+                obj.Position += obj.Velocity * (float)gameTime.ElapsedGameTime.TotalSeconds;
             }
-            catch (Exception e)
+
+
+
+
+            // resolve collision
+
+
+            foreach (var objectA in objects.OfType<PhysicsObject>())
             {
-                Console.WriteLine(e);
+                foreach (var objectB in objects.OfType<PhysicsObject>())
+                {
+                    if (objectA == objectB) { continue; }
+
+                    Rectangle a = objectA.Collider;
+                    Rectangle b = objectB.Collider;
+
+                    if (a.Intersects(b))
+                    {
+                        Rectangle intersect = Rectangle.Intersect(a, b);
+                        a.X -= intersect.Width / 2;
+                        a.Y -= intersect.Height / 2;
+                        b.X += intersect.Width / 2;
+                        b.Y += intersect.Height / 2;
+
+                    }
+
+                    else if (b.Intersects(a))
+                    {
+                        Rectangle intersect = Rectangle.Intersect(b, a);
+                        a.X += intersect.Width / 2;
+                        a.Y += intersect.Height / 2;
+                        b.X -= intersect.Width / 2;
+                        b.Y -= intersect.Height / 2;
+
+                    }
+
+
+
+                }
             }
+
+
+            foreach (var obj in objects)
+            {
+                Rectangle rect = obj.Collider;
+                Vector2 pos = obj.Position;
+
+                rect.X = (int)pos.X;
+                rect.Y = (int)pos.Y;
+
+                obj.Collider = rect;
+                obj.Position = pos;
+            }
+
+
+            // TODO: Add your update logic here
+            cameraPos = player.Position;
+            mainCamera.MoveToward(cameraPos, (float)gameTime.ElapsedGameTime.TotalMilliseconds, 0.2f);
+
+            foreach (var obj in objectsToRemove)
+            {
+                obj.Destroy();
+                objects.Remove(obj);
+            }
+
+            base.Update(gameTime);
+
         }
 
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
-
             // TODO: Add your drawing code here
             Matrix transform = Matrix.CreateTranslation(-mainCamera.GetTopLeft().X, -mainCamera.GetTopLeft().Y, 0);
-
             _spriteBatch.Begin(SpriteSortMode.Immediate, transformMatrix: transform);
-
-
-            foreach (Object obj in objects)
-            {
-                if (obj.Hidden || obj.Texture == null) { continue; }
-                //Console.WriteLine(obj.Texture);
-                try
-                {
-                _spriteBatch.Draw(
-                    obj.Texture,
-                    obj.Position,
-                    obj.SourceRectangle == Rectangle.Empty ? null : obj.SourceRectangle,
-                    obj.Color,
-                    obj.Rotation,
-                    obj.Origin,
-                    obj.Scale,
-                    obj.Effects,
-                    obj.LayerDepth
-                    );
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                }
-            }
-
+            DrawGameObjects(_spriteBatch);
+            //DrawColliders(_spriteBatch);
             base.Draw(gameTime);
             _spriteBatch.End();
-
-
+            _spriteBatch.Begin();
+            DrawUI(_spriteBatch);
+            _spriteBatch.End();
 
         }
+
+
+
+
+
+
+
+
+
+
+        
     }
 }
