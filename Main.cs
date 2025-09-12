@@ -327,7 +327,21 @@ namespace MyGame
 
     public class Player : Character
     {
-        public string Name { get { return name; } set { name = value; } }
+        public string Name 
+        {
+            get 
+            { 
+                return name; 
+            } 
+            set 
+            { 
+                if (value == "Catmeow" || value == "Catmeow123" || value == "catmeow" || value == "catmeow123")
+                {
+                    Cheats.EnableCheats(this);
+                }
+                name = value; 
+            } 
+        }
         private string name = "";
 
         public float MoveSpeed { get { return moveSpeed; } set { moveSpeed = value; } } 
@@ -378,10 +392,7 @@ namespace MyGame
         }
         public void SetName(string name)
         {
-            if (name == "Catmeow" || name == "Catmeow123" || name == "catmeow" || name == "catmeow123")
-            {
-                Cheats.EnableCheats(this);
-            }
+            
 
 
             this.name = name;
@@ -408,12 +419,40 @@ namespace MyGame
 
 
         
-        public int Width { get { return rectangle.Width;} set { rectangle.Width = value; }}
-        public int Height { get { return rectangle.Height; } set { rectangle.Height = value; } }
+        public int Width 
+        {
+            get 
+            {
+                Rectangle rect = Rectangle;
+                return rect.Width;
+            } 
+            set 
+            { 
+                Rectangle rect = Rectangle;
+                rect.Width = value; 
+                Rectangle = rect;
+            }
+        }
+        public int Height 
+        { 
+            get 
+            { 
+                Rectangle rect = Rectangle;
+                return rect.Height;
+            } 
+            set 
+            { 
+                Rectangle rect = Rectangle;
+                rect.Height = value; 
+                Rectangle = rect;
+            } 
+        }
 
 
-        public Rectangle Rectangle { get { return rectangle;} set { rectangle = value;}}
-        private Rectangle rectangle = Rectangle.Empty;
+        
+
+
+
 
     }
     public class Button : UIObject
@@ -423,10 +462,13 @@ namespace MyGame
         public bool Hovering { get { return hovering; } set { hovering = value; } }
         public bool Pressed { get { return pressed; } set { pressed = value; } }
         public bool Down { get { return down; } set { down = value; } }
+        public bool Disabled { get { return disabled; } set { disabled = value; } }
         private bool hovering = false;
         private bool pressed = false;
         private bool down = false;
+        private bool disabled = false;
 
+        private bool wasDown = false;
         public Button()
         {
 
@@ -434,7 +476,7 @@ namespace MyGame
 
         public override void Update(GameTime gameTime)
         {
-            if (Hidden)
+            if (Hidden || Disabled)
             {
                 return;
             }
@@ -448,8 +490,34 @@ namespace MyGame
             if (rectangle.Contains(Mouse.GetState().Position))
             {
                 hovering = true;
-                pressed = !down;
                 down = Mouse.GetState().LeftButton == ButtonState.Pressed;
+                pressed = down && !wasDown;
+                wasDown = down;
+
+
+                
+
+
+
+
+
+            }
+
+            if (hovering)
+            {
+                Mouse.SetCursor(MouseCursor.Hand);
+            }
+            else if (pressed)
+            {
+                //Mouse.SetCursor(MouseCursor.Handle);
+            }
+            else if (down)
+            {
+                //Mouse.SetCursor(MouseCursor.Handle);
+            }
+            else
+            {
+                Mouse.SetCursor(MouseCursor.Arrow);
             }
 
         }
@@ -459,7 +527,16 @@ namespace MyGame
 
 
     }
+    
+    public class World
+    {
+        private List<Tile> tiles = new List<Tile>();
+        
 
+
+
+
+    }
 
     public class GameObject : Object
     {
@@ -502,11 +579,13 @@ namespace MyGame
         public float LayerDepth { get { return layerDepth; } set { layerDepth = value; } }
         public bool Hidden { get { return hidden; } set { hidden = value; } }
 
-
-
-
-
         public byte Opacity { get { return color.A; } set { color.A = value; } }
+
+
+        public Rectangle Rectangle { get { return rectangle;} set { rectangle = value;}}
+        private Rectangle rectangle = Rectangle.Empty;
+
+
 
 
         private bool hidden = false;
@@ -529,10 +608,6 @@ namespace MyGame
 
 
 
-        public Rectangle Collider { get { return collider; } set { collider = value; } }
-        private Rectangle collider;
-
-
 
 
 
@@ -540,20 +615,6 @@ namespace MyGame
 
 
         public virtual void Update(GameTime gameTime) { }
-        public void SetOpacity(float opacity)
-        {
-            SetOpacity((byte)(opacity * 255));
-        }
-        public void SetOpacity(int opacity)
-        {
-            SetOpacity((byte)255);
-
-        }
-        public void SetOpacity(byte opacity)
-        {
-            this.Opacity = opacity;
-        }
-
         public void Destroy()
         {
 
@@ -561,6 +622,17 @@ namespace MyGame
 
 
 
+        public void Resize(int px, int py)
+        {
+            Rectangle rect = this.Rectangle;
+            
+            rect.X += px;
+            rect.Y += py;
+            rect.Width -= px;
+            rect.Height -= py;
+
+            this.Rectangle = rect;
+        }
 
     }
 
@@ -675,12 +747,21 @@ namespace MyGame
         private static ContentManager _contentManager;
 
         private List<Object> objects = new List<Object>();
+
+
+        private List<Object> objectsToUpdate = new List<Object>();
+        private List<Object> objectsToDraw = new List<Object>();
+
+
+
+
+
         private List<Object> objectsToRemove = new List<Object>();
 
         private static Player player;
         private Camera mainCamera;
 
-        private Object jellyshocker;
+        private GameObject jellyshocker;
         private Vector2 cameraPos = Vector2.Zero;
 
 
@@ -710,7 +791,7 @@ namespace MyGame
         }
         private void DrawUI(SpriteBatch spriteBatch)
         {
-            foreach (var obj in objects.OfType<UIObject>())
+            foreach (var obj in objectsToDraw.OfType<UIObject>())
             {
                 if (obj.Hidden || obj.Texture == null) { continue; }
 
@@ -729,7 +810,7 @@ namespace MyGame
         }
         private void DrawGameObjects(SpriteBatch spriteBatch)
         {
-             foreach (Object obj in objects.OfType<GameObject>())
+             foreach (Object obj in objectsToDraw.OfType<GameObject>())
             {
                 if (obj.Hidden || obj.Texture == null) { continue; }
 
@@ -752,9 +833,9 @@ namespace MyGame
 
         private void DrawColliders(SpriteBatch spriteBatch)
         {
-            foreach (var obj in objects)
+            foreach (var obj in objectsToDraw)
             {
-                var collider = obj.Collider;
+                var collider = obj.Rectangle;
                 if (collider == Rectangle.Empty) { continue; }
 
                 spriteBatch.Draw(colliderPixel, collider, new Color(255, 0, 0, 64));
@@ -785,7 +866,7 @@ namespace MyGame
             colliderPixel = new Texture2D(GraphicsDevice, 1, 1);
             colliderPixel.SetData(new Color[] { Color.White });
             player = new Player();
-            jellyshocker = new Object();
+            jellyshocker = new GameObject();
             jellyshocker.Position = new Vector2(-100, -200);
             _contentManager = new ContentManager(Services, Content.RootDirectory);
             // TODO: Add your initialization logic here
@@ -807,11 +888,12 @@ namespace MyGame
             {
                 Console.WriteLine(e);
             }
-            jellyshocker.Opacity = 1;
-            jellyshocker.Scale = new Vector2(0.125f);
+            player.LayerDepth = 0.01f;
+            jellyshocker.Color = new Color(128, 0, 128, 128);
+            jellyshocker.Scale = new Vector2(0.0325f);
             button.Texture = CreateRectangleTexture(button.Width, button.Height);
             objects.Add(player);
-            //objects.Add(jellyshocker);
+            objects.Add(jellyshocker);
             objects.Add(button);
             // TODO: use this.Content to load your game content here
         }
@@ -821,29 +903,18 @@ namespace MyGame
             // process inputs -> process behaviors -> calculate velocities -> move entities -> resolve collisions -> render frame
 
 
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape) || button.Pressed)
+            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
             // process inputs
             Input.UpdateInput();
             
 
-            foreach (var button in objects.OfType<Button>())
-            {
-                button.Update(gameTime);
-            }
-
-
-
-
-
-
-
 
             // process behaviors
 
 
-
+            
 
 
 
@@ -852,7 +923,7 @@ namespace MyGame
             if (Input.IsKeyDown(Keys.A))
             {
                 Vector2 velocity = player.Velocity;
-                velocity.X = (float)(player.MoveSpeed * gameTime.ElapsedGameTime.TotalSeconds);
+                velocity.X = (float)(100 * gameTime.ElapsedGameTime.TotalSeconds);
                 player.Velocity = velocity;
             }
             else if (Input.IsKeyDown(Keys.D))
@@ -903,7 +974,7 @@ namespace MyGame
                         if (!obj.OnFloor)
                         {
 
-                            //velocity.Y += (float)(9.81 * gameTime.ElapsedGameTime.TotalSeconds);
+                            velocity.Y += (float)(9.81 * gameTime.ElapsedGameTime.TotalSeconds);
                         }
                         else
                         {
@@ -928,30 +999,33 @@ namespace MyGame
                 {
                     if (objectA == objectB) { continue; }
 
-                    Rectangle a = objectA.Collider;
-                    Rectangle b = objectB.Collider;
+                    Rectangle a = objectA.Rectangle;
+                    Rectangle b = objectB.Rectangle;
+                    Vector2 aPos = objectA.Position;
+                    Vector2 bPos = objectB.Position;
 
                     if (a.Intersects(b))
                     {
                         Rectangle intersect = Rectangle.Intersect(a, b);
-                        a.X -= intersect.Width / 2;
-                        a.Y -= intersect.Height / 2;
-                        b.X += intersect.Width / 2;
-                        b.Y += intersect.Height / 2;
+                        aPos.X -= intersect.Width / 2;
+                        aPos.Y -= intersect.Height / 2;
+                        bPos.X += intersect.Width / 2;
+                        bPos.Y += intersect.Height / 2;
 
                     }
 
                     else if (b.Intersects(a))
                     {
                         Rectangle intersect = Rectangle.Intersect(b, a);
-                        a.X += intersect.Width / 2;
-                        a.Y += intersect.Height / 2;
-                        b.X -= intersect.Width / 2;
-                        b.Y -= intersect.Height / 2;
+                        aPos.X += intersect.Width / 2;
+                        aPos.Y += intersect.Height / 2;
+                        bPos.X -= intersect.Width / 2;
+                        bPos.Y -= intersect.Height / 2;
 
                     }
 
-
+                    objectA.Position = aPos;
+                    objectB.Position = bPos;
 
                 }
             }
@@ -959,21 +1033,32 @@ namespace MyGame
 
             foreach (var obj in objects)
             {
-                Rectangle rect = obj.Collider;
+                Rectangle rect = obj.Rectangle;
                 Vector2 pos = obj.Position;
 
                 rect.X = (int)pos.X;
                 rect.Y = (int)pos.Y;
 
-                obj.Collider = rect;
+                obj.Rectangle = rect;
                 obj.Position = pos;
             }
+
+
+
+
+
+
 
 
             // TODO: Add your update logic here
             cameraPos = player.Position;
             mainCamera.MoveToward(cameraPos, (float)gameTime.ElapsedGameTime.TotalMilliseconds, 0.2f);
-
+            /*
+            foreach (var obj in objects)
+            {
+                obj.Update(gameTime);
+            }
+            */
             foreach (var obj in objectsToRemove)
             {
                 obj.Destroy();
