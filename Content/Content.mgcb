@@ -13,7 +13,7 @@
 
 #---------------------------------- Content ---------------------------------#
 
-#begin ../Assets/Textures/jellyshocker.png
+#begin Assets/Textures/jellyshocker.png
 /importer:TextureImporter
 /processor:TextureProcessor
 /processorParam:ColorKeyColor=255,0,255,255
@@ -23,9 +23,9 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:../Assets/Textures/jellyshocker.png
+/build:Assets/Textures/jellyshocker.png;Assets/Textures/jellyshocker
 
-#begin ../Assets/Textures/Player.png
+#begin Assets/Textures/Player.png
 /importer:TextureImporter
 /processor:TextureProcessor
 /processorParam:ColorKeyColor=255,0,255,255
@@ -35,9 +35,9 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:../Assets/Textures/Player.png
+/build:Assets/Textures/Player.png;Assets/Textures/Player
 
-#begin ../Assets/Textures/Screenshot_1.png
+#begin Assets/Textures/Screenshot_1.png
 /importer:TextureImporter
 /processor:TextureProcessor
 /processorParam:ColorKeyColor=255,0,255,255
@@ -47,5 +47,5 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:../Assets/Textures/Screenshot_1.png
+/build:Assets/Textures/Screenshot_1.png;Assets/Textures/Screenshot_1
 
