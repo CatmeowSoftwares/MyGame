@@ -49,3 +49,10 @@
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/Screenshot_1.png;Assets/Textures/Screenshot_1
 
+#begin File.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:File.spritefont
+

@@ -385,6 +385,10 @@ namespace MyGame
             }
         }
 
+        public override void Destroy(ref List<Object> objects)
+        {
+
+        }
 
         public void Move()
         {
@@ -481,12 +485,12 @@ namespace MyGame
         public float Max { get { return max; } set { max = value; } }
         public float Value { get { return current_value; } set { current_value = value; } }
 
-
+        public int Percent { get { return percent; } set { percent = value; } }
 
         private float min = 0.0f;
         private float max = 100.0f;
         private float current_value = 0.0f;
-        private float length = 0.0f;
+        private int percent;
 
         private float w;
         private float h;
@@ -503,9 +507,53 @@ namespace MyGame
         {
             float clmap = Math.Clamp(Value, Min, Max);
             float nromalize = (clmap - Min) / (Max - Min);
-
+            percent = (int)nromalize * 100;
             Scale = new Vector2(nromalize * w, h);
             base.Update(gameTime);
+        }
+
+        public int ToPercent()
+        {
+            return percent;
+        }
+    }
+    public class CombatText
+    {
+        private static List<CombatText> combatTexts = new List<CombatText>();
+        private string text = "";
+        private Vector2 scale = Vector2.One;
+        private Color color;
+        private Vector2 position;
+        enum Type
+        {
+            NONE,
+            
+        }
+        public static void CreateText(string text, Color? color = null, Vector2? scale = null)
+        {
+            CombatText cText = new CombatText(text, color, scale);
+            combatTexts.Add(cText);
+        }
+        public static void CreateText(string text, Color? color = null, float? scale = null)
+        {
+            Vector2 scl = new Vector2(scale ?? 1.0f);
+            CreateText(text, color, scl);
+        }
+        private CombatText(string text, Color? color = null, Vector2? scale = null)
+        {
+            this.text = text;
+            this.color = color ?? Color.White;
+            this.scale = scale ?? Vector2.One;
+        }
+
+         
+        public static void DrawTexts(SpriteBatch spriteBatch,SpriteFont spriteFont ,GameTime gameTime)
+        {
+            for (int i = 0; i < combatTexts.Count; ++i)
+            {
+                CombatText combatText = combatTexts[i];
+                spriteBatch.DrawString(spriteFont, combatText.text, combatText.position, combatText.color);
+            }
         }
     }
     public class Button : UIObject
@@ -626,7 +674,7 @@ namespace MyGame
 
 
         public Vector2 Position { get { return position; } set { position = value; } }
-        public Rectangle SourceRectangle { get { return sourceRectangle; } set { sourceRectangle = value; } }
+        public Rectangle? SourceRectangle { get { return sourceRectangle; } set { sourceRectangle = value; } }
         public Color Color { get { return color; } set { color = value; } }
         public float Rotation { get { return rotation; } set { rotation = value; } }
         public Vector2 Origin { get { return origin; } set { origin = value; } }
@@ -654,7 +702,7 @@ namespace MyGame
 
         private Texture2D texture = null;
         private Vector2 position = Vector2.Zero;
-        private Rectangle sourceRectangle = Rectangle.Empty;
+        private Rectangle? sourceRectangle = null;
         private Color color = Color.White;
         private float rotation = 0.0f;
         private Vector2 origin = Vector2.Zero;
@@ -671,7 +719,7 @@ namespace MyGame
 
 
         public virtual void Update(GameTime gameTime) { }
-        public void Destroy()
+        public virtual void Destroy(ref List<Object> objects)
         {
 
         }
@@ -811,8 +859,6 @@ namespace MyGame
         private static GraphicsDeviceManager _graphics;
         private static SpriteBatch _spriteBatch;
 
-        private static ContentManager _contentManager;
-
         private List<Object> objects = new List<Object>();
 
 
@@ -839,7 +885,7 @@ namespace MyGame
 
         private bool uiHidden = false;
 
-
+        private SpriteFont spriteFont;
         
 
 
@@ -870,7 +916,6 @@ namespace MyGame
             progressBar.Position = new Vector2(25, 25);
             jellyshocker = new GameObject();
             jellyshocker.Position = new Vector2(-100, -200);
-            _contentManager = new ContentManager(Services, Content.RootDirectory);
             // TODO: Add your initialization logic here
             mainCamera = new Camera(_graphics);
             Console.WriteLine("End of Initialization");
@@ -881,7 +926,8 @@ namespace MyGame
         {
             Console.WriteLine("Start of Loading Content");
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-            AssetManager.LoadTextures(_contentManager);
+            spriteFont = this.Content.Load<SpriteFont>("File");
+            AssetManager.LoadTextures(Content);
             try
             {
                 player.Texture = AssetManager.GetTexture("Player");
@@ -978,7 +1024,7 @@ namespace MyGame
                             if (!physicsObject.OnFloor)
                             {
 
-                                //velocity.Y += (float)(9.81 * gameTime.ElapsedGameTime.TotalSeconds);
+                                velocity.Y += (float)((98.1 * 2) * gameTime.ElapsedGameTime.TotalSeconds);
                             }
                             else
                             {
@@ -1059,7 +1105,7 @@ namespace MyGame
             
             foreach (var obj in objectsToRemove.ToList())
             {
-                obj.Destroy();
+                obj.Destroy(ref objects);
                 objects.Remove(obj);
                 objectsToRemove.Remove(obj);
             }
@@ -1083,6 +1129,7 @@ namespace MyGame
             {
                 _spriteBatch.Begin();
                 DrawUI(_spriteBatch);
+                _spriteBatch.DrawString(spriteFont, Mouse.GetState().X.ToString(), new Vector2(25, 25), Color.White);
                 _spriteBatch.End();
             }
             base.Draw(gameTime);
@@ -1114,7 +1161,7 @@ namespace MyGame
                 spriteBatch.Draw(
                     obj.Texture,
                     obj.Position,
-                    obj.SourceRectangle == Rectangle.Empty ? null : obj.SourceRectangle,
+                    obj.SourceRectangle,
                     obj.Color,
                     obj.Rotation,
                     obj.Origin,
@@ -1134,7 +1181,7 @@ namespace MyGame
                 spriteBatch.Draw(
                     obj.Texture,
                     obj.Position,
-                    obj.SourceRectangle == Rectangle.Empty ? null : obj.SourceRectangle,
+                    obj.SourceRectangle,
                     obj.Color,
                     obj.Rotation,
                     obj.Origin,
