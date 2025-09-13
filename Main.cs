@@ -641,38 +641,27 @@ namespace MyGame
 
 
     }
-
     public class GameObject : Object
     {
 
     }
-
     public class Object
     {
-
         public Texture2D Texture
         {
             get
             {
-
                 return texture;
             }
             set
             {
-
                 if (value == null)
                 {
                     throw new System.Exception("Failed to set Texture");
                 }
-
                 texture = value;
             }
         }
-
-
-
-
-
         public Vector2 Position { get { return position; } set { position = value; } }
         public Rectangle? SourceRectangle { get { return sourceRectangle; } set { sourceRectangle = value; } }
         public Color Color { get { return color; } set { color = value; } }
@@ -682,24 +671,10 @@ namespace MyGame
         public SpriteEffects Effects { get { return effects; } set { effects = value; } }
         public float LayerDepth { get { return layerDepth; } set { layerDepth = value; } }
         public bool Hidden { get { return hidden; } set { hidden = value; } }
-
         public byte Opacity { get { return color.A; } set { color.A = value; } }
-
-
         public Rectangle Rectangle { get { return rectangle;} set { rectangle = value;}}
         private Rectangle rectangle = Rectangle.Empty;
-
-
-
-
         private bool hidden = false;
-
-
-
-
-
-
-
         private Texture2D texture = null;
         private Vector2 position = Vector2.Zero;
         private Rectangle? sourceRectangle = null;
@@ -709,27 +684,14 @@ namespace MyGame
         private Vector2 scale = Vector2.One;
         private SpriteEffects effects = SpriteEffects.None;
         private float layerDepth = 0.0f;
-
-
-
-
-
-
-
-
-
         public virtual void Update(GameTime gameTime) { }
         public virtual void Destroy(ref List<Object> objects)
         {
 
         }
-
-
-
         public void Resize(int px, int py)
         {
             Rectangle rect = this.Rectangle;
-            
             rect.X += px;
             rect.Y += py;
             rect.Width -= px;
@@ -737,24 +699,14 @@ namespace MyGame
 
             this.Rectangle = rect;
         }
-
     }
-
-
-
-
     public static class AssetManager
     {
         private static Dictionary<String, Texture2D> textures = new Dictionary<string, Texture2D>();
-        //private static Dictionary<String, Song> songs = new Dictionary<string, Song>();
-
-
         public static Dictionary<String, Texture2D> GetTextures()
         {
             return textures;
         }
-
-
         public static Texture2D GetTexture(string name)
         {
             textures.TryGetValue(name, out var texture);
@@ -764,7 +716,6 @@ namespace MyGame
             }
             return texture;
         }
-
         public static void LoadTextures(ContentManager contentManager, string path = "Content/Assets/Textures")
         {
             string[] paths = Array.Empty<string>();
@@ -778,12 +729,8 @@ namespace MyGame
             {
                 Console.WriteLine(e);
             }
-
-
-
             foreach (var file in paths)
             {
-
                 try
                 {
                     var relativePath = Path.GetRelativePath(contentManager.RootDirectory, file);
@@ -796,18 +743,10 @@ namespace MyGame
                 catch (Exception e)
                 {
                     Console.WriteLine("Failed to load texture");
-                    Console.WriteLine(e);
-                    
+                    Console.WriteLine(e);   
                 }
-
             }
-
-
         }
-
-
-
-
         public static void LoadAudio(ContentManager contentManager, string path = "Content/Assets/Audio")
         {
             return;
@@ -816,7 +755,6 @@ namespace MyGame
             string[] directories = System.IO.Directory.GetDirectories(path);
             foreach (var file in paths)
             {
-
                 try
                 {
                     var relativePath = Path.GetRelativePath(contentManager.RootDirectory, file);
@@ -834,26 +772,7 @@ namespace MyGame
                 }
             }
         }
-
-
-
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     public class Main : Game
     {
         private static GraphicsDeviceManager _graphics;
@@ -864,22 +783,17 @@ namespace MyGame
 
         private List<Object> objectsToUpdate = new List<Object>();
         private List<Object> objectsToDraw = new List<Object>();
-
-
-        
-
-
         private List<Object> objectsToRemove = new List<Object>();
 
         private static Player player;
         private static ProgressBar progressBar;
         private Camera mainCamera;
 
-        private GameObject jellyshocker;
+        private GameObject background;
         private Vector2 cameraPos = Vector2.Zero;
 
 
-        private static Texture2D colliderPixel;
+        private static Texture2D pixel;
 
         private Button button;
 
@@ -887,9 +801,6 @@ namespace MyGame
 
         private SpriteFont spriteFont;
         
-
-
-
 
         public Main()
         {
@@ -909,13 +820,13 @@ namespace MyGame
             button = new Button();
             button.Position = new Vector2(100.0f, 100.0f);
             button.Rectangle = new Rectangle(100, 100, 100, 100);
-            colliderPixel = new Texture2D(GraphicsDevice, 1, 1);
-            colliderPixel.SetData(new Color[] { Color.White });
+            pixel = new Texture2D(GraphicsDevice, 1, 1);
+            pixel.SetData(new Color[] { Color.White });
             player = new Player();
             progressBar = new ProgressBar(CreateRectangleTexture(1, 1));
             progressBar.Position = new Vector2(25, 25);
-            jellyshocker = new GameObject();
-            jellyshocker.Position = new Vector2(-100, -200);
+            background = new GameObject();
+            background.Position = new Vector2(-100, -200);
             // TODO: Add your initialization logic here
             mainCamera = new Camera(_graphics);
             Console.WriteLine("End of Initialization");
@@ -926,24 +837,22 @@ namespace MyGame
         {
             Console.WriteLine("Start of Loading Content");
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-            spriteFont = this.Content.Load<SpriteFont>("File");
+            try { spriteFont = this.Content.Load<SpriteFont>("File"); }
+            catch (Exception e) { Console.WriteLine(e); }
             AssetManager.LoadTextures(Content);
             try
             {
                 player.Texture = AssetManager.GetTexture("Player");
-                jellyshocker.Texture = AssetManager.GetTexture("jellyshocker");
+                background.Texture = AssetManager.GetTexture("background");
                 Console.WriteLine("Setting textures successful!");
             }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
+            catch (Exception e) { Console.WriteLine(e); }
             player.LayerDepth = 0.01f;
-            jellyshocker.Color = new Color(128, 0, 128, 128);
-            jellyshocker.Scale = new Vector2(0.0325f);
+            background.Color = new Color(128, 0, 128, 128);
+            background.Scale = new Vector2(0.0325f);
             button.Texture = CreateRectangleTexture(button.Width, button.Height);
             objects.Add(player);
-            objects.Add(jellyshocker);
+            objects.Add(background);
             objects.Add(button);
             objects.Add(progressBar);
             // TODO: use this.Content to load your game content here
@@ -957,7 +866,6 @@ namespace MyGame
             objectsToDraw.Clear();
             // process inputs -> process behaviors -> calculate velocities -> move entities -> resolve collisions -> render frame
 
-
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
             // process inputs
@@ -970,9 +878,7 @@ namespace MyGame
             {
                 ui.Update(gameTime);            
             }
-            
             // process behaviors
-
             // calculate velocities
             if (Input.IsKeyDown(Keys.A))
             {
@@ -1082,9 +988,6 @@ namespace MyGame
 
                 obj.Rectangle = rect;
                 obj.Position = pos;
-
-
-
 
 
                 if (obj is UIObject)
@@ -1201,7 +1104,7 @@ namespace MyGame
                 var collider = obj.Rectangle;
                 if (collider == Rectangle.Empty) { continue; }
 
-                spriteBatch.Draw(colliderPixel, collider, new Color(255, 0, 0, 64));
+                spriteBatch.Draw(pixel, collider, new Color(255, 0, 0, 64));
             }
         }
 
