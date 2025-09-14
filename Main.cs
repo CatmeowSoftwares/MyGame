@@ -631,7 +631,133 @@ namespace MyGame
 
 
     }
-    
+
+
+    public class QuadTree<T>
+    {
+        public struct Node
+        {
+            public static Queue<Node> nodePool = new Queue<Node>();
+
+            public Rectangle rectangle = Rectangle.Empty;
+            public int lvl;
+
+
+            List<Node> children = new List<Node>();
+            List<T> objects = new List<T>();
+
+
+            public Node(int x, int y, int width, int height, int level)
+            {
+                rectangle = new Rectangle(x, y, width, height);
+                lvl = level;
+            }
+            public Node(Rectangle rect, int level)
+            {
+                rectangle = rect;
+                lvl = level;
+            }
+
+
+            public void Add(T obj)
+            {
+                if (objects.Count < 4 || lvl == Int32.MaxValue) { objects.Add(obj); }
+                else
+                {
+                    if (children.Count == 0)
+                    {
+                        Node n1 = nodePool.First();
+                        nodePool.Dequeue();
+                        Node n2 = nodePool.First();
+                        nodePool.Dequeue();
+                        Node n3 = nodePool.First();
+                        nodePool.Dequeue();
+                        Node n4 = nodePool.First();
+                        nodePool.Dequeue();
+
+
+                        int x = rectangle.X;
+                        int y = rectangle.Y;
+                        int w = rectangle.Width;
+                        int h = rectangle.Height;
+                        n1.Set(x, y, w / 2, h / 2, lvl + 1);
+                        children.Add(n1);
+                        n2.Set(x + w / 2, y, w / 2, h / 2, lvl + 1);
+                        children.Add(n2);
+                        n3.Set(x, y + h, w / 2, h / 2, lvl + 1);
+                        children.Add(n3);
+                        n4.Set(x + w / 2, y + h / 2, w / 2, h / 2, lvl + 1);
+                        children.Add(n4);
+
+
+                        foreach (var o/*bject*/ in objects)
+                        {
+                            foreach (var n /*ode*/ in children)
+                            {
+                                if (n.Inside(o))
+                                {
+                                    n.Add(o);
+                                }
+                            }
+                        }
+
+
+                        foreach (var n /*ode*/ in children)
+                        {
+                            if (n.Inside(obj))
+                            {
+                                n.Add(obj);
+                            }
+                        }
+
+
+
+
+                    }
+                }
+            }
+
+            private bool Inside(T obj)
+            {
+                Rectangle rectA = this.rectangle;
+                Rectangle rectB = (obj as Object).Rectangle;
+
+                if (rectA.Intersects(rectB)) { return true; }
+                return false;
+            }
+
+            private void Set(int x, int y, int w, int h, int level)
+            {
+                Set(new Rectangle(x, y, w, h), level);
+            }
+            private void Set(Rectangle rectangle, int level)
+            {
+                foreach (var child in children)
+                {
+                    nodePool.Enqueue(child);
+                }
+                children.Clear();
+                objects.Clear();
+                this.rectangle = rectangle;
+                this.lvl = level;
+            }
+
+            public void ConstructQuadTree(Node root)
+            {
+                root.Set(0, 0, int.MaxValue, int.MaxValue, 0);
+                for (int i = 0; i < 100; ++i)
+                {
+                    T obj = default(T);
+                    root.Add(obj);
+                }
+            }
+
+
+        }
+
+
+
+    }
     public class World
     {
         private List<Tile> tiles = new List<Tile>();
@@ -789,7 +915,7 @@ namespace MyGame
         private static ProgressBar progressBar;
         private Camera mainCamera;
 
-        private GameObject background;
+        private GameObject Background;
         private Vector2 cameraPos = Vector2.Zero;
 
 
@@ -801,7 +927,7 @@ namespace MyGame
 
         private SpriteFont spriteFont;
         
-
+        private QuadTree<Object>.Node quadTreeRoot;
         public Main()
         {
             Console.WriteLine("Start of Main Construction");
@@ -817,6 +943,7 @@ namespace MyGame
         protected override void Initialize()
         {
             Console.WriteLine("Start of Initialization");
+            quadTreeRoot.rectangle = new Rectangle(Int32.MinValue, Int32.MinValue, Int32.MaxValue, Int32.MaxValue);
             button = new Button();
             button.Position = new Vector2(100.0f, 100.0f);
             button.Rectangle = new Rectangle(100, 100, 100, 100);
@@ -825,8 +952,8 @@ namespace MyGame
             player = new Player();
             progressBar = new ProgressBar(CreateRectangleTexture(1, 1));
             progressBar.Position = new Vector2(25, 25);
-            background = new GameObject();
-            background.Position = new Vector2(-100, -200);
+            Background = new GameObject();
+            Background.Position = new Vector2(-100, -200);
             // TODO: Add your initialization logic here
             mainCamera = new Camera(_graphics);
             Console.WriteLine("End of Initialization");
@@ -837,28 +964,27 @@ namespace MyGame
         {
             Console.WriteLine("Start of Loading Content");
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-            try { spriteFont = this.Content.Load<SpriteFont>("File"); }
+            try { spriteFont = this.Content.Load<SpriteFont>("Assets/Font"); }
             catch (Exception e) { Console.WriteLine(e); }
             AssetManager.LoadTextures(Content);
             try
             {
                 player.Texture = AssetManager.GetTexture("Player");
-                background.Texture = AssetManager.GetTexture("background");
+                Background.Texture = AssetManager.GetTexture("Background");
                 Console.WriteLine("Setting textures successful!");
             }
             catch (Exception e) { Console.WriteLine(e); }
             player.LayerDepth = 0.01f;
-            background.Color = new Color(128, 0, 128, 128);
-            background.Scale = new Vector2(0.0325f);
+            Background.Color = new Color(128, 0, 128, 128);
+            Background.Scale = new Vector2(0.0325f);
             button.Texture = CreateRectangleTexture(button.Width, button.Height);
             objects.Add(player);
-            objects.Add(background);
+            objects.Add(Background);
             objects.Add(button);
             objects.Add(progressBar);
             // TODO: use this.Content to load your game content here
             Console.WriteLine("End of Loading Content");
         }
-
         protected override void Update(GameTime gameTime)
         {
             if (!this.IsActive)
