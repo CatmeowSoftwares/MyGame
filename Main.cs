@@ -994,7 +994,10 @@ namespace MyGame
                 {
                     continue;
                 }
-                
+                if (obj.Texture == null)
+                {
+                    continue;
+                }
                 if (
                         (obj.Position.X + obj.Texture.Width < mainCamera.GetTopLeft().X) ||
                         (obj.Position.Y + obj.Texture.Height < mainCamera.GetTopLeft().Y) ||
