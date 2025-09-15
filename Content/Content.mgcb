@@ -20,6 +20,11 @@
 /processorParam:TextureFormat=Compressed
 /build:Assets/Font.spritefont
 
+#begin Assets/Roboto-Regular.ttf
+/importer:
+/processor:
+/build:Assets/Roboto-Regular.ttf
+
 #begin Assets/Textures/Background.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -31,6 +36,78 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/Background.png;Assets/Textures/Background
+
+#begin Assets/Textures/MusicPlayerExitButton.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/MusicPlayerExitButton.png;Assets/Textures/MusicPlayerExitButton
+
+#begin Assets/Textures/MusicPlayerNextButton.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/MusicPlayerNextButton.png;Assets/Textures/MusicPlayerNextButton
+
+#begin Assets/Textures/MusicPlayerPanel.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/MusicPlayerPanel.png;Assets/Textures/MusicPlayerPanel
+
+#begin Assets/Textures/MusicPlayerPauseButton.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/MusicPlayerPauseButton.png;Assets/Textures/MusicPlayerPauseButton
+
+#begin Assets/Textures/MusicPlayerPlayButton.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/MusicPlayerPlayButton.png;Assets/Textures/MusicPlayerPlayButton
+
+#begin Assets/Textures/MusicPlayerPreviousButton.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/MusicPlayerPreviousButton.png;Assets/Textures/MusicPlayerPreviousButton
 
 #begin Assets/Textures/Player.png
 /importer:TextureImporter

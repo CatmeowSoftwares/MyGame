@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Media;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -373,6 +374,16 @@ namespace MyGame
         private Item currentItemInCursor = null;
 
 
+
+
+
+
+
+        public bool UIHidden { get { return uiHidden; } set { uiHidden = value; } }
+        private bool uiHidden = false;
+        
+
+
         public override void Update(GameTime gameTime)
         {
             if (currentItemInCursor != null)
@@ -384,6 +395,12 @@ namespace MyGame
                 }
             }
         }
+
+     
+
+
+
+
 
         public override void Destroy(ref List<Object> objects)
         {
@@ -412,23 +429,109 @@ namespace MyGame
                 Velocity = vel;
             }
         }
-        public void SetName(string name)
+
+
+
+
+        public void DrawUI(SpriteBatch spriteBatch)
         {
-            
-
-
-            this.name = name;
+            DrawMusicPlayer(spriteBatch);
         }
 
 
 
 
+        private static Texture2D musicPlayerExitButton;
+        private static Texture2D musicPlayerPlayButton;
+        private static Texture2D musicPlayerPauseButton;
+        private static Texture2D musicPlayerNextButton;
+        private static Texture2D musicPlayerPreviousButton;
+        private static Texture2D musicPlayerMusicIcon;
+        private static Texture2D musicPlayerPanel;
+
+        private static Texture2D musicPlayerPlayPauseButton;
+        private static bool musicPlayerPaused = false;
+
+        private static bool musicPlayerHidden = true;
+        private static Button playPauseButton;
+        private static Button previousButton;
+        private static Button nextButton;
+
+        private static Button exitButton;
 
 
 
+        private static Song currentSong;
+        public static void Initialize()
+        {
+            InitializeMusicPlayer();
+        }
+        private static void InitializeMusicPlayer()
+        {
+            playPauseButton = new Button();
+            previousButton = new Button();
+            nextButton = new Button();
+            exitButton = new Button();
+            Main.AddObject(playPauseButton);
+            Main.AddObject(previousButton);
+            Main.AddObject(nextButton);
+            Main.AddObject(exitButton);
+        }
+        public static void UpdateMusic()
+        {
+            if (Input.IsKeyPressed(Keys.F10)) { musicPlayerHidden = !musicPlayerHidden; }
+            if (musicPlayerHidden) { return; }
+
+            if (playPauseButton.Pressed)
+            {
+                if (MediaPlayer.State == MediaState.Stopped) { MediaPlayer.Play(currentSong); }
+                else if (MediaPlayer.State == MediaState.Paused) { MediaPlayer.Resume(); }
+                else if (MediaPlayer.State == MediaState.Playing) { MediaPlayer.Pause(); }
+                musicPlayerPaused = MediaPlayer.State == MediaState.Paused;
+                musicPlayerPlayPauseButton = musicPlayerPaused ? musicPlayerPauseButton : musicPlayerPlayButton;
+            }
 
 
-  
+            if (exitButton.Pressed)
+            {
+                musicPlayerHidden = true;
+            }
+        }
+        public static void LoadTextures()
+        {
+            LoadMusicPlayerTextures();
+        }
+
+        private static void LoadMusicPlayerTextures()
+        {
+            try
+            {
+                musicPlayerExitButton = AssetManager.GetTexture("MusicPlayerExitButton");
+                musicPlayerPlayButton = AssetManager.GetTexture("MusicPlayerPlayButton");
+                musicPlayerPauseButton = AssetManager.GetTexture("MusicPlayerPauseButton");
+                musicPlayerNextButton = AssetManager.GetTexture("MusicPlayerNextButton");
+                musicPlayerPreviousButton = AssetManager.GetTexture("MusicPlayerPreviousButton");
+                //musicPlayerMusicIcon = AssetManager.GetTexture("MusicPlayerMusicIcon");
+                musicPlayerPanel = AssetManager.GetTexture("MusicPlayerPanel");
+            }
+            catch (Exception e) { Console.WriteLine(e); }
+        }
+
+        public static void DrawMusicPlayer(SpriteBatch spriteBatch)
+        {
+            if (musicPlayerHidden) { return; }
+
+            spriteBatch.Draw(musicPlayerPanel, new Vector2(25, 75), Color.White);
+            spriteBatch.Draw(musicPlayerMusicIcon, new Vector2(35, 85), Color.White);
+            spriteBatch.Draw(musicPlayerPreviousButton, new Vector2(100, 100), Color.White);
+            spriteBatch.Draw(musicPlayerPlayPauseButton, new Vector2(150, 100), Color.White);
+            spriteBatch.Draw(musicPlayerNextButton, new Vector2(200, 100), Color.White);
+            spriteBatch.Draw(musicPlayerExitButton, new Vector2(250, 100), Color.White);    
+
+        }
+
+
+
 
     }
 
@@ -904,7 +1007,7 @@ namespace MyGame
         private static GraphicsDeviceManager _graphics;
         private static SpriteBatch _spriteBatch;
 
-        private List<Object> objects = new List<Object>();
+        private static List<Object> objects = new List<Object>();
 
 
         private List<Object> objectsToUpdate = new List<Object>();
@@ -923,7 +1026,6 @@ namespace MyGame
 
         private Button button;
 
-        private bool uiHidden = false;
 
         private SpriteFont spriteFont;
         
@@ -943,6 +1045,7 @@ namespace MyGame
         protected override void Initialize()
         {
             Console.WriteLine("Start of Initialization");
+            Player.Initialize();
             quadTreeRoot.rectangle = new Rectangle(Int32.MinValue, Int32.MinValue, Int32.MaxValue, Int32.MaxValue);
             button = new Button();
             button.Position = new Vector2(100.0f, 100.0f);
@@ -967,6 +1070,7 @@ namespace MyGame
             try { spriteFont = this.Content.Load<SpriteFont>("Assets/Font"); }
             catch (Exception e) { Console.WriteLine(e); }
             AssetManager.LoadTextures(Content);
+            Player.LoadTextures();
             try
             {
                 player.Texture = AssetManager.GetTexture("Player");
@@ -987,8 +1091,6 @@ namespace MyGame
         }
         protected override void Update(GameTime gameTime)
         {
-            if (!this.IsActive)
-                return;
             objectsToDraw.Clear();
             // process inputs -> process behaviors -> calculate velocities -> move entities -> resolve collisions -> render frame
 
@@ -996,10 +1098,8 @@ namespace MyGame
                 Exit();
             // process inputs
             Input.UpdateInput();
-            if (Input.IsKeyPressed(Keys.F11))
-            {
-                uiHidden = !uiHidden;
-            }
+
+            Player.UpdateMusic();
             foreach (var ui in objects.OfType<UIObject>())
             {
                 ui.Update(gameTime);            
@@ -1038,8 +1138,6 @@ namespace MyGame
             }
             // TODO: Add your update logic here
             progressBar.Value = Mouse.GetState().X;
-            cameraPos = player.Position;
-            mainCamera.MoveToward(cameraPos, (float)gameTime.ElapsedGameTime.TotalMilliseconds, 0.2f);
             objectsToDraw = objects.ToList();
             foreach (var obj in objects)
             {
@@ -1134,7 +1232,12 @@ namespace MyGame
                     objectsToDraw.Remove(obj);
                 }
             }
-            
+
+
+            cameraPos = player.Position;
+            mainCamera.MoveToward(cameraPos, (float)gameTime.ElapsedGameTime.TotalMilliseconds, 0.9f);
+
+
             foreach (var obj in objectsToRemove.ToList())
             {
                 obj.Destroy(ref objects);
@@ -1148,7 +1251,7 @@ namespace MyGame
 
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.CornflowerBlue);
+            GraphicsDevice.Clear(Color.Black);
             // TODO: Add your drawing code here
             Matrix transform = Matrix.CreateTranslation(-mainCamera.GetTopLeft().X, -mainCamera.GetTopLeft().Y, 0);
             _spriteBatch.Begin(SpriteSortMode.Immediate, transformMatrix: transform);
@@ -1157,11 +1260,12 @@ namespace MyGame
             
             _spriteBatch.End();
 
-            if (!uiHidden)
+            if (!player.UIHidden)
             {
                 _spriteBatch.Begin();
+                player.DrawUI(_spriteBatch);
                 DrawUI(_spriteBatch);
-                _spriteBatch.DrawString(spriteFont, Mouse.GetState().X.ToString(), new Vector2(25, 25), Color.White);
+                _spriteBatch.DrawString(spriteFont, player.Velocity.Y.ToString(), new Vector2(25, 25), Color.White);
                 _spriteBatch.End();
             }
             base.Draw(gameTime);
@@ -1170,12 +1274,13 @@ namespace MyGame
 
 
 
-        public Texture2D CreateRectangleTexture(int w, int h)
+        public Texture2D CreateRectangleTexture(int w, int h, Color? color = null)
         {
+            Color trueColor = color ?? new Color(255, 0, 255);
             Color[] colors = new Color[w * h];
             for (int i = 0; i < w * h; ++i)
             {
-                colors[i] = new Color(255, 0, 255);
+                colors[i] = trueColor;
             }
             Texture2D texture = new Texture2D(GraphicsDevice, w, h);
             texture.SetData(colors);
@@ -1238,7 +1343,10 @@ namespace MyGame
         }
 
 
-
+        public static void AddObject(Object obj)
+        {
+            objects.Add(obj);
+        }
 
 
 
