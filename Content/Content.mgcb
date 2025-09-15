@@ -20,11 +20,6 @@
 /processorParam:TextureFormat=Compressed
 /build:Assets/Font.spritefont
 
-#begin Assets/Roboto-Regular.ttf
-/importer:
-/processor:
-/build:Assets/Roboto-Regular.ttf
-
 #begin Assets/Textures/Background.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -48,6 +43,18 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/MusicPlayerExitButton.png;Assets/Textures/MusicPlayerExitButton
+
+#begin Assets/Textures/MusicPlayerMusicIcon.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/MusicPlayerMusicIcon.png;Assets/Textures/MusicPlayerMusicIcon
 
 #begin Assets/Textures/MusicPlayerNextButton.png
 /importer:TextureImporter
