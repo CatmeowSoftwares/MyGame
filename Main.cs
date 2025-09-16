@@ -345,6 +345,12 @@ namespace MyGame
         public bool Solid { get { return solid; } set { solid = value; } }
         private bool solid = false;
 
+
+        enum TileTexture
+        {
+            NONE = 0,
+
+        }
        
     }
 
@@ -759,7 +765,7 @@ namespace MyGame
         private float w;
         private float h;
 
-        public ProgressBar(Texture2D texture,float width = 100.0f, float height = 16.0f, float min = 0.0f, float max = 100.0f)
+        public ProgressBar(Texture2D texture,float width = 100.0f, float height = 8.0f, float min = 0.0f, float max = 100.0f)
         {
             Texture = texture;
             this.min = min;
@@ -1045,25 +1051,55 @@ namespace MyGame
         public static Tile[,] tiles = new Tile[69420, 69420]; 
 
 
-
+        public static void CreateWorld()
+        {
+            for (int x = 0; x < World.tiles.Length; ++x)
+            {
+                for (int y = 0; y < World.tiles.Length; ++y)
+                {
+                    
+                }
+            }
+        }
 
     }
 
     public class Collision
     {
-        public static void CheckTileCollision(Vector2 position)
+        public static bool CheckTileCollision(Object obj)
         {
-            int tilePos = (int)((position.X / 16.0f) - 1f);
-            
-            for (int x = (int)(position.X - 50); x < (int)(position.X + 50); ++x)
+            Vector2 position = obj.Position;
+
+            int width = obj.Rectangle.Width;
+            int height = obj.Rectangle.Height;
+            int TL = (int)(position.X / 8.0) - 1;
+            int TR = (int)((position.X + width) / 8.0) + 2;
+            int BL = (int)(position.Y / 8.0) - 1;
+            int BR = (int)(position.Y + height / 8.0) + 2;
+
+
+            for (int x = TL; x < TR; ++x)
             {
-                for (int y = (int)(position.Y - 50); y < (int)(position.Y + 50); ++y)
+                for (int y = BL; y < BR; ++y)
                 {
                     Tile tile = World.tiles[x, y];
                     if (tile == null) { continue; }
-
+                    Vector2 vector2;
+                    vector2.X = (float)(x * 8.0);
+                    vector2.Y = (float)(y * 8.0);
+                    if (position.X + width > vector2.X && 
+                        position.X < vector2.X + 8.0 && 
+                        position.Y + height > vector2.Y && 
+                        position.Y < vector2.Y + 8.0)
+                    {
+                        if (tile.Solid)
+                        {
+                            return true;
+                        }
+                    }
                 }
             }
+            return false;
         }
 
     }
