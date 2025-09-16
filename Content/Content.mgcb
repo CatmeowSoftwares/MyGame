@@ -20,6 +20,12 @@
 /processorParam:TextureFormat=Compressed
 /build:Assets/Font.spritefont
 
+#begin Assets/ForestDayMorning.wav
+/importer:WavImporter
+/processor:SongProcessor
+/processorParam:Quality=Best
+/build:Assets/ForestDayMorning.wav
+
 #begin Assets/Textures/Background.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -43,6 +49,18 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/MusicPlayerExitButton.png;Assets/Textures/MusicPlayerExitButton
+
+#begin Assets/Textures/MusicPlayerMover.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/MusicPlayerMover.png;Assets/Textures/MusicPlayerMover
 
 #begin Assets/Textures/MusicPlayerMusicIcon.png
 /importer:TextureImporter

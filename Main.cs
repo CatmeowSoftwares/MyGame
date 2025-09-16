@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -206,15 +207,40 @@ namespace MyGame
 
         public void Add(Object obj, Vector2 offset)
         {
+            Main.AddObject(obj);
             objects.Add(obj, offset);
         }
 
+        public void Hide()
+        {
+            foreach (var obj in objects)
+            {
+                if (obj.Key is Button)
+                {
+                    Button button = (Button)obj.Key;
+                    button.Disabled = true;
+                }
+                obj.Key.Hidden = true;
+            }
+        }
+        public void Show()
+        {
+            Console.WriteLine("This should work");
+            foreach (var obj in objects)
+            {
+                if (obj.Key is Button)
+                {
+                    Button button = (Button)obj.Key;
+                    button.Disabled = false;
+                }
+                obj.Key.Hidden = false;
+            }
+        }
         public override void Update(GameTime gameTime)
         {
             foreach (var _obj in objects)
             {
                 var obj = _obj.Key;
-                obj.Update(gameTime);
                 var offset = _obj.Value;
                 obj.Position = Position + offset;
             }
@@ -222,10 +248,6 @@ namespace MyGame
 
         public void Draw(SpriteBatch sprite)
         {
-            foreach (var obj in objects)
-            {
-                sprite.Draw(obj.Key.Texture, obj.Key.Position, Color.White);
-            }    
         }
 
         public override void Destroy(ref List<Object> objects)
@@ -316,8 +338,14 @@ namespace MyGame
     {
         public int Width {get {return width;}}
         public int Height {get {return height;}}
+        public Vector2 Size { get { return new Vector2(width, height); } }
         private int width = 8;
         private int height = 8;
+
+        public bool Solid { get { return solid; } set { solid = value; } }
+        private bool solid = false;
+
+       
     }
 
 
@@ -393,6 +421,10 @@ namespace MyGame
         }
         private string name = "";
 
+
+
+
+        private int direction = 1;
         public float MoveSpeed { get { return moveSpeed; } set { moveSpeed = value; } } 
         private float moveSpeed = 250.0f;
 
@@ -477,17 +509,13 @@ namespace MyGame
         private static Texture2D musicPlayerPauseButtonTexture;
         private static Button musicPlayerNextButton;
         private static Button musicPlayerPreviousButton;
-        private static Object musicPlayerMusicIcon;
-        private static Object musicPlayerPanel;
-
+        private static UIObject musicPlayerMusicIcon;
+        private static UIObject musicPlayerPanel;
+        private static Button musicPlayerMover;
         private static Button musicPlayerPlayPauseButton;
         private static bool musicPlayerPaused = false;
-
         private static bool musicPlayerHidden = true;
         private static SongCollection musics;
-           
-
-
         private static Container musicPlayerContainer;
 
 
@@ -505,36 +533,92 @@ namespace MyGame
             musicPlayerExitButton = new Button();
             musicPlayerNextButton = new Button();
             musicPlayerPreviousButton = new Button();
-            musicPlayerMusicIcon = new Object();
-            musicPlayerPanel = new Object();
+            musicPlayerMusicIcon = new UIObject();
+            musicPlayerPanel = new UIObject();
             musicPlayerPlayPauseButton = new Button();
+            musicPlayerMover = new Button();
 
 
-            
-            
-
-
+            musicPlayerExitButton.Disabled = true;
+            musicPlayerNextButton.Disabled = true;
+            musicPlayerPreviousButton.Disabled = true;
+            musicPlayerPlayPauseButton.Disabled = true;
+            musicPlayerMover.Disabled = true;
         }
 
         private void UpdateMusic(GameTime gameTime)
         {
-            if (Input.IsKeyPressed(Keys.F10)) { musicPlayerHidden = !musicPlayerHidden; }
+            if (Input.IsKeyPressed(Keys.F10)) 
+            {
+                if (musicPlayerHidden) 
+                {
+                    musicPlayerContainer.Show();
+                    musicPlayerHidden = false;
+                }
+                else 
+                { 
+                    musicPlayerContainer.Hide();
+                    musicPlayerHidden = true;
+                }
+            }
             if (musicPlayerHidden) { return; }
             musicPlayerContainer.Update(gameTime);
+
+
+            if (MediaPlayer.State == MediaState.Stopped)
+            {
+                musicPlayerPlayPauseButton.Texture = musicPlayerPaused ? musicPlayerPlayButtonTexture : musicPlayerPauseButtonTexture;
+            }
+
+
+            if (musicPlayerMover.Down)
+            {
+                musicPlayerContainer.Position = Mouse.GetState().Position.ToVector2() + -(new Vector2(95, 31));
+            }
+
+            if (musicPlayerPreviousButton.Pressed)
+            {
+                try
+                {
+                    MediaPlayer.Play(currentSong);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+            }
+
+
             if (musicPlayerPlayPauseButton.Pressed)
             {
-                if (MediaPlayer.State == MediaState.Stopped) { MediaPlayer.Play(currentSong); }
+                if (MediaPlayer.State == MediaState.Stopped) 
+                {
+                    try
+                    {
+                        MediaPlayer.Play(currentSong);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
+                }
                 else if (MediaPlayer.State == MediaState.Paused) { MediaPlayer.Resume(); }
                 else if (MediaPlayer.State == MediaState.Playing) { MediaPlayer.Pause(); }
                 musicPlayerPaused = MediaPlayer.State == MediaState.Paused;
-                musicPlayerPlayPauseButton.Texture = musicPlayerPaused ? musicPlayerPauseButtonTexture : musicPlayerPlayButtonTexture;
+                
             }
 
 
             if (musicPlayerExitButton.Pressed)
             {
+                musicPlayerContainer.Hide();
                 musicPlayerHidden = true;
+
             }
+        }
+        public static void LoadContent(ContentManager content)
+        {
+            currentSong = content.Load<Song>("Assets/ForestDayMorning");
         }
         public static void LoadTextures()
         {
@@ -555,8 +639,12 @@ namespace MyGame
                 musicPlayerPanel.Texture = AssetManager.GetTexture("MusicPlayerPanel");
                 musicPlayerPlayPauseButton.Texture = musicPlayerPlayButtonTexture;
 
-
-
+                musicPlayerMover.Texture = AssetManager.GetTexture("MusicPlayerMover");
+                musicPlayerMover.Rectangle = new Rectangle(Point.Zero, musicPlayerMover.Texture.Bounds.Size);
+                musicPlayerExitButton.Rectangle = new Rectangle(Point.Zero, musicPlayerExitButton.Texture.Bounds.Size);
+                musicPlayerPlayPauseButton.Rectangle = new Rectangle(Point.Zero, musicPlayerPlayPauseButton.Texture.Bounds.Size);
+                musicPlayerNextButton.Rectangle = new Rectangle(Point.Zero, musicPlayerNextButton.Texture.Bounds.Size);
+                musicPlayerPreviousButton.Rectangle = new Rectangle(Point.Zero, musicPlayerPreviousButton.Texture.Bounds.Size);
             }
             catch (Exception e) { Console.WriteLine(e); }
 
@@ -571,10 +659,10 @@ namespace MyGame
             musicPlayerContainer.Add(musicPlayerPreviousButton, new Vector2(43, 19));
             musicPlayerContainer.Add(musicPlayerNextButton, new Vector2(71, 19));
             musicPlayerContainer.Add(musicPlayerMusicIcon, new Vector2(2, 2));
-            
 
+            musicPlayerContainer.Add(musicPlayerMover, new Vector2(90, 26));
 
-
+            musicPlayerContainer.Hide();
 
 
             
@@ -589,7 +677,7 @@ namespace MyGame
         }
 
 
-        private static void ReadFiles()
+        private static void ReadFiles(string path)
         {
             musics.Clear();
             string musicDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
@@ -739,7 +827,25 @@ namespace MyGame
         public bool Hovering { get { return hovering; } set { hovering = value; } }
         public bool Pressed { get { return pressed; } set { pressed = value; } }
         public bool Down { get { return down; } set { down = value; } }
-        public bool Disabled { get { return disabled; } set { disabled = value; } }
+        public bool Disabled 
+        { 
+            get 
+            { 
+                return disabled; 
+            } 
+            set 
+            { 
+                disabled = value;
+                if (disabled)
+                {
+                    hovering = false;
+                    pressed = false;
+                    down = false;
+                    wasDown = false;
+                }
+            } 
+        }
+
         private bool hovering = false;
         private bool pressed = false;
         private bool down = false;
@@ -760,10 +866,6 @@ namespace MyGame
 
             Rectangle rectangle = this.Rectangle;
 
-            hovering = false;
-            down = false;
-            pressed = false;
-
             if (rectangle.Contains(Mouse.GetState().Position))
             {
                 hovering = true;
@@ -771,31 +873,34 @@ namespace MyGame
                 pressed = down && !wasDown;
                 wasDown = down;
 
+                /*
+                if (hovering)
+                {
+                    Mouse.SetCursor(MouseCursor.Hand);
+                }
+                else if (pressed)
+                {
+                    //Mouse.SetCursor(MouseCursor.Handle);
+                }
+                else if (down)
+                {
+                    //Mouse.SetCursor(MouseCursor.Handle);
+                }
+                */
 
-                
 
 
 
-
-
-            }
-
-            if (hovering)
-            {
-                Mouse.SetCursor(MouseCursor.Hand);
-            }
-            else if (pressed)
-            {
-                //Mouse.SetCursor(MouseCursor.Handle);
-            }
-            else if (down)
-            {
-                //Mouse.SetCursor(MouseCursor.Handle);
             }
             else
             {
-                Mouse.SetCursor(MouseCursor.Arrow);
+                hovering = false;
+                down = false;
+                pressed = false;
+                //Mouse.SetCursor(MouseCursor.Arrow);
             }
+
+            
 
         }
 
@@ -936,11 +1041,30 @@ namespace MyGame
     }
     public class World
     {
-        private List<Tile> tiles = new List<Tile>();
-        
+
+        public static Tile[,] tiles = new Tile[69420, 69420]; 
 
 
 
+
+    }
+
+    public class Collision
+    {
+        public static void CheckTileCollision(Vector2 position)
+        {
+            int tilePos = (int)((position.X / 16.0f) - 1f);
+            
+            for (int x = (int)(position.X - 50); x < (int)(position.X + 50); ++x)
+            {
+                for (int y = (int)(position.Y - 50); y < (int)(position.Y + 50); ++y)
+                {
+                    Tile tile = World.tiles[x, y];
+                    if (tile == null) { continue; }
+
+                }
+            }
+        }
 
     }
     public class GameObject : Object
@@ -1139,6 +1263,7 @@ namespace MyGame
         {
             Console.WriteLine("Start of Loading Content");
             _spriteBatch = new SpriteBatch(GraphicsDevice);
+            Player.LoadContent(Content);
             try { spriteFont = this.Content.Load<SpriteFont>("Assets/Font"); }
             catch (Exception e) { Console.WriteLine(e); }
             AssetManager.LoadTextures(Content);
@@ -1165,7 +1290,7 @@ namespace MyGame
         {
             objectsToDraw.Clear();
             // process inputs -> process behaviors -> calculate velocities -> move entities -> resolve collisions -> render frame
-
+            if (!this.IsActive) return;
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
             // process inputs
@@ -1306,7 +1431,7 @@ namespace MyGame
 
 
             cameraPos = player.Position;
-            mainCamera.MoveToward(cameraPos, (float)gameTime.ElapsedGameTime.TotalMilliseconds, 0.9f);
+            mainCamera.MoveToward(cameraPos, (float)gameTime.ElapsedGameTime.TotalMilliseconds, 1f);
 
 
             foreach (var obj in objectsToRemove.ToList())
@@ -1328,7 +1453,7 @@ namespace MyGame
             Matrix transform = Matrix.CreateTranslation(-mainCamera.GetTopLeft().X, -mainCamera.GetTopLeft().Y, 0);
             _spriteBatch.Begin(SpriteSortMode.Immediate, transformMatrix: transform);
             DrawGameObjects(_spriteBatch);
-            //DrawColliders(_spriteBatch);
+            
             
             _spriteBatch.End();
 
@@ -1337,10 +1462,10 @@ namespace MyGame
                 _spriteBatch.Begin();
                 player.DrawUI(_spriteBatch);
                 DrawUI(_spriteBatch);
-
+                //DrawColliders<UIObject>(_spriteBatch);
                 int fps = (int)(1.0f / (float)gameTime.ElapsedGameTime.TotalSeconds);
                 progressBar.Value = fps / 60;
-                _spriteBatch.DrawString(spriteFont, fps.ToString(), Vector2.Zero, Color.White);
+                _spriteBatch.DrawString(spriteFont, fps.ToString(), Vector2.Zero, Color.Magenta);
                 _spriteBatch.End();
             }
             base.Draw(gameTime);
@@ -1351,7 +1476,7 @@ namespace MyGame
 
         public Texture2D CreateRectangleTexture(int w, int h, Color? color = null)
         {
-            Color trueColor = color ?? new Color(255, 0, 255);
+            Color trueColor = color ?? new Color(255, 255, 255);
             Color[] colors = new Color[w * h];
             for (int i = 0; i < w * h; ++i)
             {
@@ -1406,10 +1531,13 @@ namespace MyGame
             }
         }
 
-        private void DrawColliders(SpriteBatch spriteBatch)
+        private void DrawColliders<T>(SpriteBatch spriteBatch)
         {
             foreach (var obj in objectsToDraw)
             {
+                if (obj is not T)
+                    continue;
+
                 var collider = obj.Rectangle;
                 if (collider == Rectangle.Empty) { continue; }
 
