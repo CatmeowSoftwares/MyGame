@@ -225,7 +225,6 @@ namespace MyGame
         }
         public void Show()
         {
-            Console.WriteLine("This should work");
             foreach (var obj in objects)
             {
                 if (obj.Key is Button)
@@ -323,7 +322,8 @@ namespace MyGame
         public bool OnFloor { get { return onFloor; } set { onFloor = value; } }
         private bool onFloor = false;
 
-
+        public float TerminalVelocity {  get { return terminalVelocity; } set { terminalVelocity = value; } }
+        private float terminalVelocity = 420.0f;
 
 
 
@@ -506,7 +506,7 @@ namespace MyGame
         {
             DrawMusicPlayer(spriteBatch);
         }
-
+                                                                                                            
 
 
 
@@ -519,7 +519,7 @@ namespace MyGame
         private static UIObject musicPlayerPanel;
         private static Button musicPlayerMover;
         private static Button musicPlayerPlayPauseButton;
-        private static bool musicPlayerPaused = false;
+        private static bool musicPlayerPaused = true;
         private static bool musicPlayerHidden = true;
         private static SongCollection musics;
         private static Container musicPlayerContainer;
@@ -571,7 +571,7 @@ namespace MyGame
             musicPlayerContainer.Update(gameTime);
 
 
-            if (MediaPlayer.State == MediaState.Stopped)
+            if (MediaPlayer.State == MediaState.Paused || MediaPlayer.State == MediaState.Stopped)
             {
                 musicPlayerPlayPauseButton.Texture = musicPlayerPaused ? musicPlayerPlayButtonTexture : musicPlayerPauseButtonTexture;
             }
@@ -579,6 +579,7 @@ namespace MyGame
 
             if (musicPlayerMover.Down)
             {
+                musicPlayerPaused = MediaPlayer.State == MediaState.Paused || MediaPlayer.State == MediaState.Stopped;
                 musicPlayerContainer.Position = Mouse.GetState().Position.ToVector2() + -(new Vector2(95, 31));
             }
 
@@ -610,8 +611,8 @@ namespace MyGame
                 }
                 else if (MediaPlayer.State == MediaState.Paused) { MediaPlayer.Resume(); }
                 else if (MediaPlayer.State == MediaState.Playing) { MediaPlayer.Pause(); }
-                musicPlayerPaused = MediaPlayer.State == MediaState.Paused;
-                
+                musicPlayerPaused = MediaPlayer.State == MediaState.Paused || MediaPlayer.State == MediaState.Stopped;
+                musicPlayerPlayPauseButton.Texture = musicPlayerPaused ? musicPlayerPlayButtonTexture : musicPlayerPauseButtonTexture;
             }
 
 
@@ -643,7 +644,7 @@ namespace MyGame
                 musicPlayerNextButton.Texture = AssetManager.GetTexture("MusicPlayerNextButton");
                 musicPlayerPreviousButton.Texture = AssetManager.GetTexture("MusicPlayerPreviousButton");
                 musicPlayerPanel.Texture = AssetManager.GetTexture("MusicPlayerPanel");
-                musicPlayerPlayPauseButton.Texture = musicPlayerPlayButtonTexture;
+                musicPlayerPlayPauseButton.Texture = AssetManager.GetTexture("MusicPlayerPlayButton");
 
                 musicPlayerMover.Texture = AssetManager.GetTexture("MusicPlayerMover");
                 musicPlayerMover.Rectangle = new Rectangle(Point.Zero, musicPlayerMover.Texture.Bounds.Size);
@@ -1053,9 +1054,9 @@ namespace MyGame
 
         public static void CreateWorld()
         {
-            for (int x = 0; x < World.tiles.Length; ++x)
+            for (int x = 0; x < World.tiles.GetLength(0); ++x)
             {
-                for (int y = 0; y < World.tiles.Length; ++y)
+                for (int y = 0; y < World.tiles.GetLength(1); ++y)
                 {
                     
                 }
@@ -1324,9 +1325,9 @@ namespace MyGame
         }
         protected override void Update(GameTime gameTime)
         {
-            objectsToDraw.Clear();
-            // process inputs -> process behaviors -> calculate velocities -> move entities -> resolve collisions -> render frame
             if (!this.IsActive) return;
+            objectsToDraw.Clear();
+            // process inputs -> process behaviors -> calculate velocities -> move entities -> resolve collisions -> render frame  
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
             // process inputs
@@ -1467,7 +1468,7 @@ namespace MyGame
 
 
             cameraPos = player.Position;
-            mainCamera.MoveToward(cameraPos, (float)gameTime.ElapsedGameTime.TotalMilliseconds, 1f);
+            mainCamera.MoveToward(cameraPos, (float)gameTime.ElapsedGameTime.TotalMilliseconds, 0.9999999f);
 
 
             foreach (var obj in objectsToRemove.ToList())
@@ -1489,8 +1490,9 @@ namespace MyGame
             Matrix transform = Matrix.CreateTranslation(-mainCamera.GetTopLeft().X, -mainCamera.GetTopLeft().Y, 0);
             _spriteBatch.Begin(SpriteSortMode.Immediate, transformMatrix: transform);
             DrawGameObjects(_spriteBatch);
-            
-            
+            //DrawCollidersOutline<UIObject>(_spriteBatch);
+
+
             _spriteBatch.End();
 
             if (!player.UIHidden)
@@ -1498,7 +1500,7 @@ namespace MyGame
                 _spriteBatch.Begin();
                 player.DrawUI(_spriteBatch);
                 DrawUI(_spriteBatch);
-                //DrawColliders<UIObject>(_spriteBatch);
+                DrawCollidersOutline<UIObject>(_spriteBatch);
                 int fps = (int)(1.0f / (float)gameTime.ElapsedGameTime.TotalSeconds);
                 progressBar.Value = fps / 60;
                 _spriteBatch.DrawString(spriteFont, fps.ToString(), Vector2.Zero, Color.Magenta);
@@ -1580,6 +1582,56 @@ namespace MyGame
                 spriteBatch.Draw(pixel, collider, new Color(255, 0, 0, 64));
             }
         }
+
+        private void DrawCollidersOutline<T>(SpriteBatch spriteBatch)
+        {
+            foreach (var obj in objectsToDraw)
+            {
+                if (obj is not T)
+                    continue;
+
+                var collider = obj.Rectangle;
+                if (collider == Rectangle.Empty) { continue; }
+
+                DrawOutline(spriteBatch, collider, Color.Red);
+            }
+        }
+
+
+        private void DrawOutline(SpriteBatch spriteBatch, Rectangle target, Color color)
+        {
+            Texture2D tex = pixel;
+
+            if (color == default)
+                color = new Color(49, 84, 141) * 0.9f;
+
+            var sourceCorner = new Rectangle(0, 0, 6, 6);
+            var sourceEdge = new Rectangle(6, 0, 4, 6);
+            var sourceCenter = new Rectangle(6, 6, 4, 4);
+
+
+            int outline = 4;
+
+            spriteBatch.Draw(tex, new Rectangle(target.X + outline, target.Y, target.Width - outline*2, outline), color);
+            spriteBatch.Draw(tex, new Rectangle(target.X, target.Y - outline + target.Height, target.Height - outline*2, outline), sourceEdge, color, -(float)Math.PI * 0.5f, Vector2.Zero, 0, 0);
+            spriteBatch.Draw(tex, new Rectangle(target.X - outline + target.Width, target.Y + target.Height, target.Width - outline * 2, outline), sourceEdge, color, (float)Math.PI, Vector2.Zero, 0, 0);
+            spriteBatch.Draw(tex, new Rectangle(target.X + target.Width, target.Y + outline, target.Height - outline * 2, outline), sourceEdge, color, (float)Math.PI * 0.5f, Vector2.Zero, 0, 0);
+
+            spriteBatch.Draw(tex, new Rectangle(target.X, target.Y, outline, outline), sourceCorner, color, 0, Vector2.Zero, 0, 0);
+            spriteBatch.Draw(tex, new Rectangle(target.X + target.Width, target.Y, outline, outline), sourceCorner, color, (float)Math.PI * 0.5f, Vector2.Zero, 0, 0);
+            spriteBatch.Draw(tex, new Rectangle(target.X + target.Width, target.Y + target.Height, outline, outline), sourceCorner, color, (float)Math.PI, Vector2.Zero, 0, 0);
+            spriteBatch.Draw(tex, new Rectangle(target.X, target.Y + target.Height, outline, outline), sourceCorner, color, (float)Math.PI * 1.5f, Vector2.Zero, 0, 0);
+            /*
+            int outline = 4;
+            spriteBatch.Draw(pixel, new Rectangle(target.Location.X + (outline / 2), target.Location.Y, target.Width + outline, outline), color);
+
+
+            spriteBatch.Draw(pixel, new Rectangle(target.Location.X, target.Location.Y + outline / 2, outline, target.Height + outline), color);
+            spriteBatch.Draw(pixel, new Rectangle(target.Location.X + outline/2, target.Location.Y + target.Height, target.Width + outline, outline), color);
+            spriteBatch.Draw(pixel, new Rectangle(target.Location.X + target.Width, target.Location.Y + outline / 2, outline, target.Height + outline), color);
+            */
+        }
+
 
 
         public static void AddObject(Object obj)
