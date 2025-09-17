@@ -20,11 +20,11 @@
 /processorParam:TextureFormat=Compressed
 /build:Assets/Font.spritefont
 
-#begin Assets/ForestDayMorning.wav
-/importer:WavImporter
+#begin Assets/ForestDayMorning.ogg
+/importer:OggImporter
 /processor:SongProcessor
 /processorParam:Quality=Best
-/build:Assets/ForestDayMorning.wav
+/build:Assets/ForestDayMorning.ogg
 
 #begin Assets/Textures/Background.png
 /importer:TextureImporter
@@ -146,6 +146,30 @@
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/Player.png;Assets/Textures/Player
 
+#begin Assets/Textures/PlayerRightHand.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerRightHand.png;Assets/Textures/PlayerRightHand
+
+#begin Assets/Textures/PlayerWalkingLegs.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerWalkingLegs.png;Assets/Textures/PlayerWalkingLegs
+
 #begin Assets/Textures/Screenshot_1.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -157,4 +181,16 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/Screenshot_1.png;Assets/Textures/Screenshot_1
+
+#begin Assets/Textures/Test.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/Test.png;Assets/Textures/Test
 

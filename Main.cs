@@ -8,6 +8,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata;
+using System.Text.RegularExpressions;
 
 namespace MyGame
 {
@@ -305,7 +307,7 @@ namespace MyGame
 
 
 
-    public class PhysicsObject : GameObject
+    public class PhysicsObject : ColliderObject
     {
 
         public bool PhysicsDisabled { get { return physicsDisabled; } set { physicsDisabled = value; } }
@@ -408,6 +410,25 @@ namespace MyGame
         }
     }
 
+    public class ColliderObject : GameObject
+    {
+        public enum ObjectType
+        {
+            None = 0,
+            Player = 1,
+            Npc = 2,
+            Enemy = 3,
+            Projectile = 4,
+            Item = 5,
+        }
+        public ObjectType Type { get { return type; } set { type = value; } }
+        private ObjectType type = ObjectType.None;
+    }
+
+    public class Projectile : ColliderObject
+    {
+
+    }
     public class Player : Character
     {
         public string Name 
@@ -439,6 +460,7 @@ namespace MyGame
 
 
         public Item[] Items { get { return items; }}
+        public Item currentlyHeldItem = null;
         private Item currentItemInCursor = null;
 
 
@@ -449,9 +471,29 @@ namespace MyGame
 
         public bool UIHidden { get { return uiHidden; } set { uiHidden = value; } }
         private bool uiHidden = false;
-        
 
 
+
+        private GameObject rightHand;
+        private Vector2 rightHandOffset = new Vector2(-2, 0);
+        private Vector2 handPosition;
+
+        enum PlayerState
+        {
+            None,
+            Walking,
+            Running,
+            Jumping,
+            Falling
+        }
+
+        private float LookAt(Vector2 direction)
+        {
+            return (float)Math.Atan2(direction.Y, direction.X);
+        }
+
+
+        private PlayerState playerState = PlayerState.None;
         public override void Update(GameTime gameTime)
         {
             UpdateMusic(gameTime);
@@ -462,6 +504,22 @@ namespace MyGame
                     var mouse = Mouse.GetState();
                     currentItemInCursor.Position = new Vector2(mouse.X, mouse.Y);
                 }
+            }
+
+            rightHand.Position = Position + rightHandOffset;
+
+
+
+
+            if (direction == 1)
+            {
+                Vector2 mousePos = Mouse.GetState().Position.ToVector2() + Main.camera.GetTopLeft();
+                float angel = LookAt(mousePos - rightHand.Position);
+                rightHand.Rotation = angel; 
+            }
+            else if (direction == -1)
+            {
+
             }
         }
 
@@ -526,8 +584,24 @@ namespace MyGame
 
 
         private static Song currentSong;
-        public static void Initialize()
+        public void Initialize()
         {
+            
+            Console.WriteLine("Sucess!");
+        }
+        public void LoadContent(ContentManager content)
+        {
+            Console.WriteLine(rightHand + "<- null??");
+            rightHand = new GameObject();
+            rightHand.Texture = content.Load<Texture2D>("Assets/Textures/PlayerRightHand");
+
+            rightHand.Origin = new Vector2(1, 1);
+            handPosition = new Vector2(12, 1);
+
+            Main.AddObject(rightHand);
+        }
+        public static void InitializeStatic()
+        {                                                          
             InitializeMusicPlayer();
         }
         private static void InitializeMusicPlayer()
@@ -623,7 +697,7 @@ namespace MyGame
 
             }
         }
-        public static void LoadContent(ContentManager content)
+        public static void LoadContentStatic(ContentManager content)
         {
             currentSong = content.Load<Song>("Assets/ForestDayMorning");
         }
@@ -705,6 +779,22 @@ namespace MyGame
 
     public class Item : Object 
     {
+        public Vector2 HandPos
+        {
+            get
+            {
+                return handPos;
+            }
+            set 
+            {
+                handPos = value;
+            }
+        }
+        private Vector2 handPos;
+
+
+
+
 
     }
     public class UIObject : Object
@@ -1102,11 +1192,27 @@ namespace MyGame
             }
             return false;
         }
-
+            
     }
     public class GameObject : Object
     {
 
+        public GameObject() : base()
+        {
+
+        }
+        public Animation Animation
+        {
+            get 
+            {
+                return animation;
+            }
+            set
+            {
+                animation = value;
+            }
+        }
+        private Animation animation;
     }
     public class Object
     {
@@ -1128,15 +1234,29 @@ namespace MyGame
         public Vector2 Position { get { return position; } set { position = value; } }
         public Rectangle? SourceRectangle { get { return sourceRectangle; } set { sourceRectangle = value; } }
         public Color Color { get { return color; } set { color = value; } }
-        public float Rotation { get { return rotation; } set { rotation = value; } }
+        public float Rotation 
+        { 
+            get 
+            { 
+                // no radians
+                return MathHelper.ToDegrees(rotation); 
+            } 
+            set 
+            {
+                // i hate math, if you want radians, convert it yourself
+                float degree = MathHelper.ToRadians(value);
+                rotation = degree; 
+                rotation = MathHelper.WrapAngle(rotation); 
+            } 
+        }
         public Vector2 Origin { get { return origin; } set { origin = value; } }
         public Vector2 Scale { get { return scale; } set { scale = value; } }
         public SpriteEffects Effects { get { return effects; } set { effects = value; } }
         public float LayerDepth { get { return layerDepth; } set { layerDepth = value; } }
         public bool Hidden { get { return hidden; } set { hidden = value; } }
         public byte Opacity { get { return color.A; } set { color.A = value; } }
-        public Rectangle Rectangle { get { return rectangle;} set { rectangle = value;}}
-        private Rectangle rectangle = Rectangle.Empty;
+        public Rectangle Rectangle { get { return rectangle ?? Rectangle.Empty;} set { rectangle = value;}}
+        private Rectangle? rectangle = null;
         private bool hidden = false;
         private Texture2D texture = null;
         private Vector2 position = Vector2.Zero;
@@ -1198,6 +1318,7 @@ namespace MyGame
                 {
                     var relativePath = Path.GetRelativePath(contentManager.RootDirectory, file);
                     var textureName = Path.GetFileNameWithoutExtension(file);
+                    if (relativePath.Substring(relativePath.Length - 4) != ".xnb") continue;
                     var texturePath = relativePath.Replace(".xnb", "");
                     Texture2D texture = contentManager.Load<Texture2D>(texturePath);
                     textures.Add(textureName, texture);
@@ -1250,7 +1371,8 @@ namespace MyGame
 
         private static Player player;
         private static ProgressBar progressBar;
-        private Camera mainCamera;
+        
+        public static Camera camera;
 
         private GameObject Background;
         private Vector2 cameraPos = Vector2.Zero;
@@ -1264,6 +1386,9 @@ namespace MyGame
         private SpriteFont spriteFont;
         
         private QuadTree<Object>.Node quadTreeRoot;
+
+        private GameObject test;
+
         public Main()
         {
             Console.WriteLine("Start of Main Construction");
@@ -1279,7 +1404,10 @@ namespace MyGame
         protected override void Initialize()
         {
             Console.WriteLine("Start of Initialization");
-            Player.Initialize();
+            test = new GameObject();
+            player = new Player();
+            player.Initialize();
+            Player.InitializeStatic();
             quadTreeRoot.rectangle = new Rectangle(Int32.MinValue, Int32.MinValue, Int32.MaxValue, Int32.MaxValue);
             button = new Button();
             button.Position = new Vector2(100.0f, 100.0f);
@@ -1291,7 +1419,7 @@ namespace MyGame
             Background = new GameObject();
             Background.Position = new Vector2(-100, -200);
             // TODO: Add your initialization logic here
-            mainCamera = new Camera(_graphics);
+            camera = new Camera(_graphics);
             Console.WriteLine("End of Initialization");
             base.Initialize();
         }
@@ -1300,14 +1428,17 @@ namespace MyGame
         {
             Console.WriteLine("Start of Loading Content");
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-            Player.LoadContent(Content);
+            player.LoadContent(Content);
+            Player.LoadContentStatic(Content);
             try { spriteFont = this.Content.Load<SpriteFont>("Assets/Font"); }
             catch (Exception e) { Console.WriteLine(e); }
             AssetManager.LoadTextures(Content);
+            test.Texture = AssetManager.GetTexture("Test");
+            test.Origin = test.Texture.Bounds.Center.ToVector2();
             Player.LoadTextures();
             try
             {
-                player.Texture = AssetManager.GetTexture("Player");
+                player.Texture = AssetManager.GetTexture("Player");                                                         
                 Background.Texture = AssetManager.GetTexture("Background");
                 Console.WriteLine("Setting textures successful!");
             }
@@ -1320,11 +1451,15 @@ namespace MyGame
             objects.Add(Background);
             objects.Add(button);
             objects.Add(progressBar);
+            objects.Add(test);
             // TODO: use this.Content to load your game content here
             Console.WriteLine("End of Loading Content");
         }
         protected override void Update(GameTime gameTime)
         {
+            //float rot = test.Rotation % 360.0f;
+            test.Rotation += 1 * (float)gameTime.ElapsedGameTime.TotalSeconds;
+           
             if (!this.IsActive) return;
             objectsToDraw.Clear();
             // process inputs -> process behaviors -> calculate velocities -> move entities -> resolve collisions -> render frame  
@@ -1387,7 +1522,7 @@ namespace MyGame
                             if (!physicsObject.OnFloor)
                             {
 
-                                velocity.Y += (float)((98.1 * 2) * gameTime.ElapsedGameTime.TotalSeconds);
+                                //velocity.Y += (float)((98.1 * 2) * gameTime.ElapsedGameTime.TotalSeconds);
                             }
                             else
                             {
@@ -1456,10 +1591,10 @@ namespace MyGame
                     continue;
                 }
                 if (
-                        (obj.Position.X + obj.Texture.Width < mainCamera.GetTopLeft().X) ||
-                        (obj.Position.Y + obj.Texture.Height < mainCamera.GetTopLeft().Y) ||
-                        (obj.Position.X > mainCamera.GetTopLeft().X + _graphics.PreferredBackBufferWidth) ||
-                        (obj.Position.Y > mainCamera.GetTopLeft().Y + _graphics.PreferredBackBufferHeight)
+                        (obj.Position.X + obj.Texture.Width < camera.GetTopLeft().X) ||
+                        (obj.Position.Y + obj.Texture.Height < camera.GetTopLeft().Y) ||
+                        (obj.Position.X > camera.GetTopLeft().X + _graphics.PreferredBackBufferWidth) ||
+                        (obj.Position.Y > camera.GetTopLeft().Y + _graphics.PreferredBackBufferHeight)
                         )
                 {
                     objectsToDraw.Remove(obj);
@@ -1468,7 +1603,7 @@ namespace MyGame
 
 
             cameraPos = player.Position;
-            mainCamera.MoveToward(cameraPos, (float)gameTime.ElapsedGameTime.TotalMilliseconds, 0.9999999f);
+            camera.MoveToward(cameraPos, (float)gameTime.ElapsedGameTime.TotalMilliseconds, 0.9999999f);
 
 
             foreach (var obj in objectsToRemove.ToList())
@@ -1487,7 +1622,7 @@ namespace MyGame
         {
             GraphicsDevice.Clear(Color.Black); 
             // TODO: Add your drawing code here
-            Matrix transform = Matrix.CreateTranslation(-mainCamera.GetTopLeft().X, -mainCamera.GetTopLeft().Y, 0);
+            Matrix transform = Matrix.CreateTranslation(-camera.GetTopLeft().X, -camera.GetTopLeft().Y, 0);
             _spriteBatch.Begin(SpriteSortMode.Immediate, transformMatrix: transform);
             DrawGameObjects(_spriteBatch);
             //DrawCollidersOutline<UIObject>(_spriteBatch);
@@ -1591,15 +1726,14 @@ namespace MyGame
                     continue;
 
                 var collider = obj.Rectangle;
-                if (collider == Rectangle.Empty) { continue; }
-
+                if (collider.Size == Point.Zero || obj.Hidden) { continue; }
                 DrawOutline(spriteBatch, collider, Color.Red);
             }
         }
 
 
         private void DrawOutline(SpriteBatch spriteBatch, Rectangle target, Color color)
-        {
+        {               
             Texture2D tex = pixel;
 
             if (color == default)
@@ -1610,17 +1744,18 @@ namespace MyGame
             var sourceCenter = new Rectangle(6, 6, 4, 4);
 
 
-            int outline = 4;
-
+            int outline = 4;    
+            byte a = color.A;
+            Color cornerColor = color ;
             spriteBatch.Draw(tex, new Rectangle(target.X + outline, target.Y, target.Width - outline*2, outline), color);
             spriteBatch.Draw(tex, new Rectangle(target.X, target.Y - outline + target.Height, target.Height - outline*2, outline), sourceEdge, color, -(float)Math.PI * 0.5f, Vector2.Zero, 0, 0);
             spriteBatch.Draw(tex, new Rectangle(target.X - outline + target.Width, target.Y + target.Height, target.Width - outline * 2, outline), sourceEdge, color, (float)Math.PI, Vector2.Zero, 0, 0);
             spriteBatch.Draw(tex, new Rectangle(target.X + target.Width, target.Y + outline, target.Height - outline * 2, outline), sourceEdge, color, (float)Math.PI * 0.5f, Vector2.Zero, 0, 0);
 
-            spriteBatch.Draw(tex, new Rectangle(target.X, target.Y, outline, outline), sourceCorner, color, 0, Vector2.Zero, 0, 0);
-            spriteBatch.Draw(tex, new Rectangle(target.X + target.Width, target.Y, outline, outline), sourceCorner, color, (float)Math.PI * 0.5f, Vector2.Zero, 0, 0);
-            spriteBatch.Draw(tex, new Rectangle(target.X + target.Width, target.Y + target.Height, outline, outline), sourceCorner, color, (float)Math.PI, Vector2.Zero, 0, 0);
-            spriteBatch.Draw(tex, new Rectangle(target.X, target.Y + target.Height, outline, outline), sourceCorner, color, (float)Math.PI * 1.5f, Vector2.Zero, 0, 0);
+            spriteBatch.Draw(tex, new Rectangle(target.X, target.Y, outline, outline), sourceCorner, cornerColor, 0, Vector2.Zero, 0, 0);
+            spriteBatch.Draw(tex, new Rectangle(target.X + target.Width, target.Y, outline, outline), sourceCorner, cornerColor, (float)Math.PI * 0.5f, Vector2.Zero, 0, 0);
+            spriteBatch.Draw(tex, new Rectangle(target.X + target.Width, target.Y + target.Height, outline, outline), sourceCorner, cornerColor, (float)Math.PI, Vector2.Zero, 0, 0);
+            spriteBatch.Draw(tex, new Rectangle(target.X, target.Y + target.Height, outline, outline), sourceCorner, cornerColor, (float)Math.PI * 1.5f, Vector2.Zero, 0, 0);
             /*
             int outline = 4;
             spriteBatch.Draw(pixel, new Rectangle(target.Location.X + (outline / 2), target.Location.Y, target.Width + outline, outline), color);
@@ -1636,6 +1771,7 @@ namespace MyGame
 
         public static void AddObject(Object obj)
         {
+            if (obj == null) throw new Exception("Failed to... idk");
             objects.Add(obj);
         }
 
