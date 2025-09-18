@@ -463,6 +463,9 @@ namespace MyGame
             maxFrames = frameCount;
             this.fps = fps;
             durationPerFrame = 1000.0f / fps;
+
+            frame = 0;
+            elapsed = 0.0f;
         }
         public static void UpdateAnimations(GameTime gameTime)
         {
@@ -478,10 +481,11 @@ namespace MyGame
             elapsed += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
             if (elapsed < durationPerFrame)
                 return;
-            ++frame;
+            
             elapsed = 0.0f;
             int frameWidth = texture.Width / maxFrames;
             target.SourceRectangle = new Rectangle(frameWidth * frame, 0, frameWidth, texture.Height);
+            ++frame;
             if (this.frame < maxFrames - 1)
                 return;
             frame = 0;
@@ -532,7 +536,11 @@ namespace MyGame
 
         private int direction = 1;
         public float MoveSpeed { get { return moveSpeed; } set { moveSpeed = value; } } 
-        private float moveSpeed = 250.0f;
+        private float moveSpeed = 100.0f;
+
+
+        public float MaxSpeed { get { return maxSpeed; } set { maxSpeed = value; } }
+        private float maxSpeed = 250.0f;
         public float JumpPower { get { return jumpPower; } set { jumpPower = value; } }
         private float jumpPower = -400f;
 
@@ -546,19 +554,19 @@ namespace MyGame
 
         private Vector2[] bodyPartOffsetsRight =
         {
-            Vector2.Zero,
-            new Vector2(0, 8),
-            new Vector2(5, 8),
-            new Vector2(0, 8),
-            new Vector2(0, 16)
+            new Vector2(0, -4),
+            new Vector2(0, 0),
+            new Vector2(5, 0),
+            new Vector2(0, 0),
+            new Vector2(0, 0)
         };
         private Vector2[] bodyPartOffsetsLeft =
         {
-            Vector2.Zero,
-            new Vector2(0, 8),
-            new Vector2(0, 8),
-            new Vector2(5, 8),
-            new Vector2(0, 16)
+            new Vector2(0, -4),
+            new Vector2(0, 0),
+            new Vector2(5, 0),
+            new Vector2(0, 0),
+            new Vector2(0, 0)
         };
         private enum Part
         {
@@ -571,29 +579,13 @@ namespace MyGame
 
 
         private GameObject head;
-        private GameObject torso
-        {
-            get
-            {
-                return (GameObject)this;
-            }
-            set
-            {
-                // Don't
-                if (value == null)
-                {
-                    Console.WriteLine("ARE YOU TRYING TO DELETE ME???");
-                    Main.Quit();
-                    
-                }
-            }
-        }
+        private GameObject torso;
         private GameObject legs;
 
 
         public bool UIHidden { get { return uiHidden; } set { uiHidden = value; } }
         private bool uiHidden = false;
-
+                                                                        
 
 
         private GameObject rightHand;
@@ -610,7 +602,7 @@ namespace MyGame
         }
         
         private PlayerState playerState = PlayerState.None;
-     
+        private PlayerState lastPlayerState = PlayerState.None;
 
     
 
@@ -632,12 +624,18 @@ namespace MyGame
             handPosition = new Vector2(12, 1);
 
 
-
+            head = new GameObject();
+            head.Texture = AssetManager.GetTexture("PlayerHead");
+            head.Animation = new Animation(head, head.Texture, 1);
             legs = new GameObject();
-            legs.Texture = AssetManager.GetTexture("PlayerWalkingLegs");
-            legs.Animation = new Animation(legs, legs.Texture, 8);
-
+            legs.Texture = AssetManager.GetTexture("PlayerLegs");
+            legs.Animation = new Animation(legs, legs.Texture, 1);
+            torso = new GameObject();
+            torso.Texture = AssetManager.GetTexture("PlayerTorso");
+            torso.Animation = new Animation(torso, torso.Texture, 1);
             Main.AddObject(legs);
+            Main.AddObject(torso);
+            Main.AddObject(head);
 
             Main.AddObject(rightHand);
         }
@@ -653,6 +651,11 @@ namespace MyGame
                     currentItemInCursor.Position = new Vector2(mouse.X, mouse.Y);
                 }
             }
+
+            Vector2 headOffset = (direction == -1) ? bodyPartOffsetsLeft[(int)Part.Head] : bodyPartOffsetsRight[(int)Part.Head];
+            head.Position = Position + headOffset;
+            Vector2 torsoOffset = (direction == -1) ? bodyPartOffsetsLeft[(int)Part.Torso] : bodyPartOffsetsRight[(int)Part.Torso];
+            torso.Position = Position + torsoOffset;
             Vector2 legsOffset = (direction == -1) ? bodyPartOffsetsLeft[(int)Part.Legs] : bodyPartOffsetsRight[(int)Part.Legs];
             legs.Position = Position + legsOffset;
 
@@ -732,6 +735,23 @@ namespace MyGame
             {
 
             }
+
+            if (playerState != lastPlayerState)
+            {
+                if (playerState == PlayerState.None)
+                {
+
+                }
+                else if (playerState == PlayerState.Walking)
+                {
+                    head.Animation.OverridePreviousAnimation(AssetManager.GetTexture("PlayerWalkingHead"), 8);
+                    torso.Animation.OverridePreviousAnimation(AssetManager.GetTexture("PlayerWalkingTorso"), 8);
+                    legs.Animation.OverridePreviousAnimation(AssetManager.GetTexture("PlayerWalkingLegs"), 8);
+                }
+            }
+            lastPlayerState = playerState;
+            Console.WriteLine(Velocity.ToString());
+    
         }
 
 
@@ -752,27 +772,34 @@ namespace MyGame
             if (Input.IsKeyDown(Keys.A))
             {
                 Vector2 velocity = Velocity;
-                velocity.X = (float)(100 * gameTime.ElapsedGameTime.TotalSeconds);
+                velocity.X -= (float)(MoveSpeed * gameTime.ElapsedGameTime.TotalSeconds);
+                velocity.X = Math.Max(-maxSpeed, -velocity.X);
                 Velocity = velocity;
+                playerState = PlayerState.Walking;
             }
             else if (Input.IsKeyDown(Keys.D))
             {
                 Vector2 velocity = Velocity;
-                velocity.X = (float)(MoveSpeed * gameTime.ElapsedGameTime.TotalSeconds);
+                velocity.X += (float)(MoveSpeed * gameTime.ElapsedGameTime.TotalSeconds);
+                velocity.X = Math.Min(maxSpeed, velocity.X);
                 Velocity = velocity;
+                playerState = PlayerState.Walking;
             }
             else
             {
                 Vector2 velocity = Velocity;
                 velocity.X = 0;
                 Velocity = velocity;
+                playerState = PlayerState.None;
             }
             if (Input.IsKeyPressed(Keys.Space))
             {
                 Vector2 velocity = Velocity;
                 velocity.Y = -400;
                 Velocity = velocity;
+               
             }
+
         }
 
 
@@ -1490,7 +1517,7 @@ namespace MyGame
                 height = Texture.Bounds.Height;
                 return new Vector2(width, height);
             }
-            //return Texture.Bounds.Size.ToVector2();
+            return Texture.Bounds.Size.ToVector2();
             return Texture.Bounds.Size
                 .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
                 .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
@@ -1683,13 +1710,13 @@ namespace MyGame
             {
                 paths = System.IO.Directory.GetFiles(path);
                 directories = System.IO.Directory.GetDirectories(path);
-            }
+            } 
             catch (Exception e)
             {
                 Console.WriteLine(e);
             }
             foreach (var file in paths)
-            {
+            {                                                   
                 try
                 {
                     var relativePath = Path.GetRelativePath(contentManager.RootDirectory, file);
@@ -1773,6 +1800,10 @@ namespace MyGame
             IsMouseVisible = true;
             _graphics.SynchronizeWithVerticalRetrace = false;
             IsFixedTimeStep = false;
+            //_graphics.IsFullScreen = true;
+            //_graphics.HardwareModeSwitch = false;
+            _graphics.PreferredBackBufferWidth = 640;
+            _graphics.PreferredBackBufferHeight = 360;
             _graphics.ApplyChanges();
             Console.WriteLine("End of Main Construction");
         }
@@ -1790,7 +1821,6 @@ namespace MyGame
             button.Rectangle = new Rectangle(100, 100, 100, 100);
             pixel = new Texture2D(GraphicsDevice, 1, 1);
             pixel.SetData(new Color[] { Color.White });
-            player = new Player();
             progressBar = new ProgressBar(CreateRectangleTexture(1, 1));
             Background = new GameObject();
             Background.Position = new Vector2(-100, -200);
@@ -1804,7 +1834,6 @@ namespace MyGame
         {
             Console.WriteLine("Start of Loading Content");
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-            
             try { spriteFont = this.Content.Load<SpriteFont>("Assets/Font"); }
             catch (Exception e) { Console.WriteLine(e); }
             AssetManager.LoadTextures(Content);
@@ -1814,8 +1843,7 @@ namespace MyGame
             test.Origin = test.GetSize()/2.0f;
             Player.LoadTextures();
             try
-            {
-                player.Texture = AssetManager.GetTexture("Player");                                                         
+            {                                              
                 Background.Texture = AssetManager.GetTexture("Background");
                 Console.WriteLine("Setting textures successful!");
             }
@@ -1835,7 +1863,7 @@ namespace MyGame
         protected override void Update(GameTime gameTime)
         {
             //float rot = test.Rotation % 360.0f;
-            test.Rotation += 1 * (float)gameTime.ElapsedGameTime.TotalSeconds;
+            test.Rotation += 100.0f * (float)gameTime.ElapsedGameTime.TotalSeconds;
             Animation.UpdateAnimations(gameTime);
             if (!this.IsActive) return;
             objectsToDraw.Clear();
@@ -1957,7 +1985,7 @@ namespace MyGame
 
 
             cameraPos = player.Position;
-            camera.MoveToward(cameraPos, (float)gameTime.ElapsedGameTime.TotalMilliseconds, 0.9999999f);
+            camera.MoveToward(cameraPos + new Vector2(16, 16), (float)gameTime.ElapsedGameTime.TotalMilliseconds, 0.9f);
 
 
             foreach (var obj in objectsToRemove.ToList())
@@ -1971,22 +1999,24 @@ namespace MyGame
 
         }
 
-
+        private int virtualWidth = 640;
+        private int virtualHeight = 360;
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.Black); 
             // TODO: Add your drawing code here
             Matrix transform = Matrix.CreateTranslation(-camera.GetTopLeft().X, -camera.GetTopLeft().Y, 0);
-            _spriteBatch.Begin(SpriteSortMode.BackToFront, transformMatrix: transform);
+            _spriteBatch.Begin(SpriteSortMode.BackToFront,samplerState: SamplerState.PointWrap, transformMatrix: transform);
             DrawGameObjects(_spriteBatch);
             //DrawCollidersOutline<UIObject>(_spriteBatch);
 
 
             _spriteBatch.End();
 
+
             if (!player.UIHidden)
             {
-                _spriteBatch.Begin();
+                _spriteBatch.Begin(samplerState: SamplerState.PointWrap);
                 player.DrawUI(_spriteBatch);
                 DrawUI(_spriteBatch);
                 DrawCollidersOutline<UIObject>(_spriteBatch);
@@ -1994,6 +2024,9 @@ namespace MyGame
                 progressBar.Value = fps / 60;
                 _spriteBatch.DrawString(spriteFont, fps.ToString(), Vector2.Zero, Color.Magenta);
                 _spriteBatch.End();
+
+
+               
             }
             base.Draw(gameTime);
         }
@@ -2027,7 +2060,7 @@ namespace MyGame
                     obj.Position,
                     obj.SourceRectangle,
                     obj.Color,
-                    obj.Rotation,
+                    MathHelper.ToRadians(obj.Rotation),
                     obj.Origin,
                     obj.Scale,
                     obj.Effects,
@@ -2047,7 +2080,7 @@ namespace MyGame
                     obj.Position,
                     obj.SourceRectangle,
                     obj.Color,
-                    obj.Rotation,
+                    MathHelper.ToRadians(obj.Rotation),
                     obj.Origin,
                     obj.Scale,
                     obj.Effects,
@@ -2104,7 +2137,8 @@ namespace MyGame
 
             int outline = 4;    
             byte a = color.A;
-            Color cornerColor = color ;
+            Color cornerColor = color * 0.5f;
+            cornerColor.A = (byte)255;
             spriteBatch.Draw(tex, new Rectangle(target.X + outline, target.Y, target.Width - outline*2, outline), color);
             spriteBatch.Draw(tex, new Rectangle(target.X, target.Y - outline + target.Height, target.Height - outline*2, outline), sourceEdge, color, -(float)Math.PI * 0.5f, Vector2.Zero, 0, 0);
             spriteBatch.Draw(tex, new Rectangle(target.X - outline + target.Width, target.Y + target.Height, target.Width - outline * 2, outline), sourceEdge, color, (float)Math.PI, Vector2.Zero, 0, 0);
