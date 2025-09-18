@@ -8,8 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection.Metadata;
-using System.Text.RegularExpressions;
 
 namespace MyGame
 {
@@ -82,10 +80,18 @@ namespace MyGame
         
 
 
+        private static MouseState currentMouseState;
+        private static MouseState previousMouseState;
 
 
-
-
+        public enum MouseButton
+        {
+            Left,
+            Right,
+            Middle,
+            X1,
+            X2
+        }
 
         private static KeyboardState currentKeyboardState;
         private static KeyboardState previousKeyboardState;
@@ -110,7 +116,55 @@ namespace MyGame
             return currentKeyboardState.IsKeyUp(key);
         }
 
+        public static bool IsMouseButtonPressed(MouseButton mouseButton)
+        {
+            if (mouseButton == MouseButton.Left)
+            {
+                return currentMouseState.LeftButton == ButtonState.Pressed && previousMouseState.LeftButton == ButtonState.Released;
+            }
+            else if (mouseButton == MouseButton.Right)
+            {
+                return currentMouseState.RightButton == ButtonState.Pressed && previousMouseState.RightButton == ButtonState.Released;
+            }
+            else if (mouseButton == MouseButton.Middle)
+            {
+                return currentMouseState.MiddleButton == ButtonState.Pressed && previousMouseState.MiddleButton == ButtonState.Released;
+            }
+            else if (mouseButton == MouseButton.X1)
+            {
+                return currentMouseState.XButton1 == ButtonState.Pressed && previousMouseState.XButton1 == ButtonState.Released;
+            }
+            else if (mouseButton == MouseButton.X2)
+            {
+                return currentMouseState.XButton2 == ButtonState.Pressed && previousMouseState.XButton2 == ButtonState.Released;
+            }
+            return false;
+        }
 
+        public static bool IsMouseButtonDown(MouseButton mouseButton)
+        {
+            if (mouseButton == MouseButton.Left)
+            {
+                return currentMouseState.LeftButton == ButtonState.Pressed;
+            }
+            else if (mouseButton == MouseButton.Right)
+            {
+                return currentMouseState.RightButton == ButtonState.Pressed;
+            }
+            else if (mouseButton == MouseButton.Middle)
+            {
+                return currentMouseState.MiddleButton == ButtonState.Pressed;
+            }
+            else if (mouseButton == MouseButton.X1)
+            {
+                return currentMouseState.XButton1 == ButtonState.Pressed;
+            }
+            else if (mouseButton == MouseButton.X2)
+            {
+                return currentMouseState.XButton2 == ButtonState.Pressed;
+            }
+            return false;
+        }
 
 
 
@@ -125,6 +179,9 @@ namespace MyGame
             
             previousKeyboardState = currentKeyboardState;
             currentKeyboardState = Keyboard.GetState();
+
+            previousMouseState = currentMouseState;
+            currentMouseState = Mouse.GetState();
 
             ScanForKonamiCode();
             //Diagnostics.Debug.WriteLine("Hello world");
@@ -375,18 +432,37 @@ namespace MyGame
     {
 
 
+        public Animation(GameObject target, Texture2D texture, int frameCount, int fps = 10)
+        {
+            this.target = target;
+            this.texture = texture;
+            maxFrames = frameCount;
+            this.fps = fps;
+            durationPerFrame = 1000.0f / fps;
+            animations.Add(this);
+        }
         private static List<Animation> animations = new List<Animation>();
-        private int frame;
-        private int maxFrames;
-        private float elapsed;
-        private int fps = 10;
-        private float durationPerFrame = 100.0f;
+        public int frame = 0;
+        public int maxFrames = 1;
+        public float elapsed = 0.0f;
+        public int fps = 10;
+        public float durationPerFrame = 100.0f;
+        private GameObject target;
+        private Texture2D texture;
 
         private int[] transition_linear = { 1, 2, 3, 4, 5, 6, 7, 8 };
 
         private static void Initialize()
         {
 
+        }
+
+        public void OverridePreviousAnimation(Texture2D texture, int frameCount, int fps = 10)
+        {
+            this.texture = texture;
+            maxFrames = frameCount;
+            this.fps = fps;
+            durationPerFrame = 1000.0f / fps;
         }
         public static void UpdateAnimations(GameTime gameTime)
         {
@@ -400,11 +476,13 @@ namespace MyGame
         private void UpdateAnimation(GameTime gameTime)
         {
             elapsed += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
-            if (elapsed < durationPerFrame || elapsed / 60 > fps)
+            if (elapsed < durationPerFrame)
                 return;
             ++frame;
             elapsed = 0.0f;
-            if (this.frame < maxFrames)
+            int frameWidth = texture.Width / maxFrames;
+            target.SourceRectangle = new Rectangle(frameWidth * frame, 0, frameWidth, texture.Height);
+            if (this.frame < maxFrames - 1)
                 return;
             frame = 0;
         }
@@ -412,6 +490,7 @@ namespace MyGame
 
     public class ColliderObject : GameObject
     {
+        // ColliderObjects are things that will collide in a quadtree or something, i will add the quadtree implementation soon™
         public enum ObjectType
         {
             None = 0,
@@ -454,6 +533,8 @@ namespace MyGame
         private int direction = 1;
         public float MoveSpeed { get { return moveSpeed; } set { moveSpeed = value; } } 
         private float moveSpeed = 250.0f;
+        public float JumpPower { get { return jumpPower; } set { jumpPower = value; } }
+        private float jumpPower = -400f;
 
         private Item[] items = new Item[16];
         
@@ -463,10 +544,51 @@ namespace MyGame
         public Item currentlyHeldItem = null;
         private Item currentItemInCursor = null;
 
+        private Vector2[] bodyPartOffsetsRight =
+        {
+            Vector2.Zero,
+            new Vector2(0, 8),
+            new Vector2(5, 8),
+            new Vector2(0, 8),
+            new Vector2(0, 16)
+        };
+        private Vector2[] bodyPartOffsetsLeft =
+        {
+            Vector2.Zero,
+            new Vector2(0, 8),
+            new Vector2(0, 8),
+            new Vector2(5, 8),
+            new Vector2(0, 16)
+        };
+        private enum Part
+        {
+            Head = 0,
+            Torso,
+            LeftHand,
+            RightHand,
+            Legs
+        }
 
 
-
-
+        private GameObject head;
+        private GameObject torso
+        {
+            get
+            {
+                return (GameObject)this;
+            }
+            set
+            {
+                // Don't
+                if (value == null)
+                {
+                    Console.WriteLine("ARE YOU TRYING TO DELETE ME???");
+                    Main.Quit();
+                    
+                }
+            }
+        }
+        private GameObject legs;
 
 
         public bool UIHidden { get { return uiHidden; } set { uiHidden = value; } }
@@ -486,17 +608,43 @@ namespace MyGame
             Jumping,
             Falling
         }
-
-        private float LookAt(Vector2 direction)
-        {
-            return (float)Math.Atan2(direction.Y, direction.X);
-        }
-
-
+        
         private PlayerState playerState = PlayerState.None;
+     
+
+    
+
+        public void Initialize()
+        {
+              
+            Console.WriteLine("Sucess!");
+        }
+        public void LoadContent(ContentManager content)
+        {
+            Console.WriteLine(rightHand + "<- null??");
+            rightHand = new GameObject();
+            rightHand.Texture = AssetManager.GetTexture("PlayerRightHand");
+
+            rightHand.Origin = new Vector2(1, 1);
+
+
+
+            handPosition = new Vector2(12, 1);
+
+
+
+            legs = new GameObject();
+            legs.Texture = AssetManager.GetTexture("PlayerWalkingLegs");
+            legs.Animation = new Animation(legs, legs.Texture, 8);
+
+            Main.AddObject(legs);
+
+            Main.AddObject(rightHand);
+        }
         public override void Update(GameTime gameTime)
         {
             UpdateMusic(gameTime);
+            Move(gameTime);
             if (currentItemInCursor != null)
             {
                 if (currentItemInCursor is Item)
@@ -505,17 +653,80 @@ namespace MyGame
                     currentItemInCursor.Position = new Vector2(mouse.X, mouse.Y);
                 }
             }
+            Vector2 legsOffset = (direction == -1) ? bodyPartOffsetsLeft[(int)Part.Legs] : bodyPartOffsetsRight[(int)Part.Legs];
+            legs.Position = Position + legsOffset;
+
 
             rightHand.Position = Position + rightHandOffset;
 
+            if (currentlyHeldItem != null)
+            {
+                if (currentlyHeldItem.holdStyle == Item.HoldStyle.None)
+                {
 
+                }
+                else if (currentlyHeldItem.holdStyle == Item.HoldStyle.Front)
+                {
+
+                }
+                else if (currentlyHeldItem.holdStyle == Item.HoldStyle.Shoot)
+                {
+
+                }
+
+
+
+
+                if (currentlyHeldItem.clickType == Item.ClickType.Press)
+                {
+                    if (Input.IsMouseButtonPressed(Input.MouseButton.Left))
+                    {
+                        currentlyHeldItem.Use();
+                        if (currentlyHeldItem.useStyle == Item.UseStyle.None)
+                        {
+
+                        }
+                        else if (currentlyHeldItem.useStyle == Item.UseStyle.Shoot)
+                        {
+
+                        }
+                    }
+                }
+                else if (currentlyHeldItem.clickType == Item.ClickType.Hold)
+                {
+                    if (Input.IsMouseButtonDown(Input.MouseButton.Left))
+                    {
+                        currentlyHeldItem.Use();
+                    }
+                }
+                
+            }
+            else
+            {
+                rightHand.Hidden = true;
+            }
 
 
             if (direction == 1)
             {
-                Vector2 mousePos = Mouse.GetState().Position.ToVector2() + Main.camera.GetTopLeft();
-                float angel = LookAt(mousePos - rightHand.Position);
-                rightHand.Rotation = angel; 
+                if (currentlyHeldItem != null)
+                {
+                    if (currentlyHeldItem.holdStyle == Item.HoldStyle.Shoot)
+                    {
+                        Vector2 mousePos = Mouse.GetState().Position.ToVector2() + Main.camera.GetTopLeft();
+                        float angel = LookAt(mousePos - rightHand.Position);
+                        rightHand.Hidden = false;
+                        rightHand.Rotation = angel;
+
+
+                    }
+                    else if (currentlyHeldItem.holdStyle == Item.HoldStyle.Front)
+                    {
+                        rightHand.Hidden = true;
+                    }
+                }
+
+
             }
             else if (direction == -1)
             {
@@ -523,37 +734,44 @@ namespace MyGame
             }
         }
 
-     
 
 
 
-
+        private float LookAt(Vector2 direction)
+        {
+            return (float)Math.Atan2(direction.Y, direction.X);
+        }
 
         public override void Destroy(ref List<Object> objects)
         {
 
         }
 
-        public void Move()
+        public void Move(GameTime gameTime)
         {
             if (Input.IsKeyDown(Keys.A))
             {
-                Vector2 vel = Velocity;
-                vel.X = -100;
-                Velocity = vel;
+                Vector2 velocity = Velocity;
+                velocity.X = (float)(100 * gameTime.ElapsedGameTime.TotalSeconds);
+                Velocity = velocity;
             }
-            else if(Input.IsKeyDown(Keys.D))
+            else if (Input.IsKeyDown(Keys.D))
             {
-                Vector2 vel = Velocity;
-                vel.X = 100;
-                Velocity = vel;
+                Vector2 velocity = Velocity;
+                velocity.X = (float)(MoveSpeed * gameTime.ElapsedGameTime.TotalSeconds);
+                Velocity = velocity;
             }
-
+            else
+            {
+                Vector2 velocity = Velocity;
+                velocity.X = 0;
+                Velocity = velocity;
+            }
             if (Input.IsKeyPressed(Keys.Space))
             {
-                Vector2 vel = Velocity;
-                vel.Y = 400;
-                Velocity = vel;
+                Vector2 velocity = Velocity;
+                velocity.Y = -400;
+                Velocity = velocity;
             }
         }
 
@@ -584,22 +802,7 @@ namespace MyGame
 
 
         private static Song currentSong;
-        public void Initialize()
-        {
-            
-            Console.WriteLine("Sucess!");
-        }
-        public void LoadContent(ContentManager content)
-        {
-            Console.WriteLine(rightHand + "<- null??");
-            rightHand = new GameObject();
-            rightHand.Texture = content.Load<Texture2D>("Assets/Textures/PlayerRightHand");
-
-            rightHand.Origin = new Vector2(1, 1);
-            handPosition = new Vector2(12, 1);
-
-            Main.AddObject(rightHand);
-        }
+       
         public static void InitializeStatic()
         {                                                          
             InitializeMusicPlayer();
@@ -721,11 +924,11 @@ namespace MyGame
                 musicPlayerPlayPauseButton.Texture = AssetManager.GetTexture("MusicPlayerPlayButton");
 
                 musicPlayerMover.Texture = AssetManager.GetTexture("MusicPlayerMover");
-                musicPlayerMover.Rectangle = new Rectangle(Point.Zero, musicPlayerMover.Texture.Bounds.Size);
-                musicPlayerExitButton.Rectangle = new Rectangle(Point.Zero, musicPlayerExitButton.Texture.Bounds.Size);
-                musicPlayerPlayPauseButton.Rectangle = new Rectangle(Point.Zero, musicPlayerPlayPauseButton.Texture.Bounds.Size);
-                musicPlayerNextButton.Rectangle = new Rectangle(Point.Zero, musicPlayerNextButton.Texture.Bounds.Size);
-                musicPlayerPreviousButton.Rectangle = new Rectangle(Point.Zero, musicPlayerPreviousButton.Texture.Bounds.Size);
+                musicPlayerMover.Rectangle = new Rectangle(Point.Zero, musicPlayerMover.GetSize().ToPoint());
+                musicPlayerExitButton.Rectangle = new Rectangle(Point.Zero, musicPlayerExitButton.GetSize().ToPoint());
+                musicPlayerPlayPauseButton.Rectangle = new Rectangle(Point.Zero, musicPlayerPlayPauseButton.GetSize().ToPoint());
+                musicPlayerNextButton.Rectangle = new Rectangle(Point.Zero, musicPlayerNextButton.GetSize().ToPoint());
+                musicPlayerPreviousButton.Rectangle = new Rectangle(Point.Zero, musicPlayerPreviousButton.GetSize().ToPoint());
             }
             catch (Exception e) { Console.WriteLine(e); }
 
@@ -777,8 +980,34 @@ namespace MyGame
 
     }
 
+    public class ItemSlot : Button
+    {
+        public string itemName;
+        public string itemStats;
+        public int itemAmount = 0;
+        public Item item;
+
+        public void AddItem(Item item)
+        {
+            this.item = item;
+            itemName = item.GetType().Name;
+            itemAmount++;
+        }
+        public override void Update(GameTime gameTime)
+        {
+            base.Update(gameTime);
+            if (item != null)
+            {
+                if (Hovering)
+                {
+                    
+                }
+            }
+        }
+    }
     public class Item : Object 
     {
+        public string name;
         public Vector2 HandPos
         {
             get
@@ -792,8 +1021,38 @@ namespace MyGame
         }
         private Vector2 handPos;
 
+        public enum ClickType
+        {
+            None,
+            Press,
+            Hold
+        }
 
 
+      
+
+        public enum UseStyle
+        {
+            None,
+            Shoot,
+        }
+
+        public enum HoldStyle
+        {
+            None,
+            Front,
+            Shoot,
+        }
+
+
+        public UseStyle useStyle = UseStyle.None;
+        public HoldStyle holdStyle = HoldStyle.None;
+        public ClickType clickType = ClickType.None;
+
+        public virtual void Use()
+        {
+            
+        }
 
 
     }
@@ -1201,18 +1460,7 @@ namespace MyGame
         {
 
         }
-        public Animation Animation
-        {
-            get 
-            {
-                return animation;
-            }
-            set
-            {
-                animation = value;
-            }
-        }
-        private Animation animation;
+        
     }
     public class Object
     {
@@ -1230,6 +1478,130 @@ namespace MyGame
                 }
                 texture = value;
             }
+        }
+        public Vector2 GetSize()
+        {
+            if (animation != null)
+            {
+                int width = 0;
+                int height = 0;
+
+                width = Texture.Bounds.Width / animation.maxFrames;
+                height = Texture.Bounds.Height;
+                return new Vector2(width, height);
+            }
+            //return Texture.Bounds.Size.ToVector2();
+            return Texture.Bounds.Size
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint().ToVector2().ToPoint()
+                .ToVector2()
+
+                ;
         }
         public Vector2 Position { get { return position; } set { position = value; } }
         public Rectangle? SourceRectangle { get { return sourceRectangle; } set { sourceRectangle = value; } }
@@ -1267,6 +1639,10 @@ namespace MyGame
         private Vector2 scale = Vector2.One;
         private SpriteEffects effects = SpriteEffects.None;
         private float layerDepth = 0.0f;
+
+        public Animation Animation { get { return animation; } set { animation = value; } }
+        private Animation animation = null;
+
         public virtual void Update(GameTime gameTime) { }
         public virtual void Destroy(ref List<Object> objects)
         {
@@ -1388,7 +1764,7 @@ namespace MyGame
         private QuadTree<Object>.Node quadTreeRoot;
 
         private GameObject test;
-
+        private static bool shouldExit = false;
         public Main()
         {
             Console.WriteLine("Start of Main Construction");
@@ -1428,13 +1804,14 @@ namespace MyGame
         {
             Console.WriteLine("Start of Loading Content");
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-            player.LoadContent(Content);
-            Player.LoadContentStatic(Content);
+            
             try { spriteFont = this.Content.Load<SpriteFont>("Assets/Font"); }
             catch (Exception e) { Console.WriteLine(e); }
             AssetManager.LoadTextures(Content);
+            player.LoadContent(Content);
+            Player.LoadContentStatic(Content);
             test.Texture = AssetManager.GetTexture("Test");
-            test.Origin = test.Texture.Bounds.Center.ToVector2();
+            test.Origin = test.GetSize()/2.0f;
             Player.LoadTextures();
             try
             {
@@ -1459,11 +1836,11 @@ namespace MyGame
         {
             //float rot = test.Rotation % 360.0f;
             test.Rotation += 1 * (float)gameTime.ElapsedGameTime.TotalSeconds;
-           
+            Animation.UpdateAnimations(gameTime);
             if (!this.IsActive) return;
             objectsToDraw.Clear();
             // process inputs -> process behaviors -> calculate velocities -> move entities -> resolve collisions -> render frame  
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape) || shouldExit)
                 Exit();
             // process inputs
             Input.UpdateInput();
@@ -1474,30 +1851,7 @@ namespace MyGame
             }
             // process behaviors
             // calculate velocities
-            if (Input.IsKeyDown(Keys.A))
-            {
-                Vector2 velocity = player.Velocity;
-                velocity.X = (float)(100 * gameTime.ElapsedGameTime.TotalSeconds);
-                player.Velocity = velocity;
-            }
-            else if (Input.IsKeyDown(Keys.D))
-            {
-                Vector2 velocity = player.Velocity;
-                velocity.X = (float)(player.MoveSpeed * gameTime.ElapsedGameTime.TotalSeconds);
-                player.Velocity = velocity;
-            }
-            else
-            {
-                Vector2 velocity = player.Velocity;
-                velocity.X = 0;
-                player.Velocity = velocity;
-            }
-            if (Input.IsKeyPressed(Keys.Space))
-            {
-                Vector2 velocity = player.Velocity;
-                velocity.Y = -400;
-                player.Velocity = velocity;
-            }
+            
 
             if (button.Pressed)
             {
@@ -1623,7 +1977,7 @@ namespace MyGame
             GraphicsDevice.Clear(Color.Black); 
             // TODO: Add your drawing code here
             Matrix transform = Matrix.CreateTranslation(-camera.GetTopLeft().X, -camera.GetTopLeft().Y, 0);
-            _spriteBatch.Begin(SpriteSortMode.Immediate, transformMatrix: transform);
+            _spriteBatch.Begin(SpriteSortMode.BackToFront, transformMatrix: transform);
             DrawGameObjects(_spriteBatch);
             //DrawCollidersOutline<UIObject>(_spriteBatch);
 
@@ -1718,6 +2072,10 @@ namespace MyGame
             }
         }
 
+        public static void Quit()
+        {
+            shouldExit = true;
+        }
         private void DrawCollidersOutline<T>(SpriteBatch spriteBatch)
         {
             foreach (var obj in objectsToDraw)

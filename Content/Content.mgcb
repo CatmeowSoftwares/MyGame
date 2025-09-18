@@ -20,11 +20,11 @@
 /processorParam:TextureFormat=Compressed
 /build:Assets/Font.spritefont
 
-#begin Assets/ForestDayMorning.ogg
-/importer:OggImporter
+#begin Assets/ForestDayMorning.wav
+/importer:WavImporter
 /processor:SongProcessor
 /processorParam:Quality=Best
-/build:Assets/ForestDayMorning.ogg
+/build:Assets/ForestDayMorning.wav
 
 #begin Assets/Textures/Background.png
 /importer:TextureImporter
