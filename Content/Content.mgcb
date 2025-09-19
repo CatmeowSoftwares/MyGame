@@ -36,7 +36,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:Assets/Textures/Background.png;Assets/Textures/Background
+/build:Assets/Textures/Background.png
 
 #begin Assets/Textures/Background.png
 /importer:TextureImporter
@@ -50,6 +50,54 @@
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/Background.png
 
+#begin Assets/Textures/Item1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/Item1.png
+
+#begin Assets/Textures/Item1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/Item1.png
+
+#begin Assets/Textures/ItemSlot.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/ItemSlot.png
+
+#begin Assets/Textures/ItemSlot.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/ItemSlot.png
+
 #begin Assets/Textures/MusicPlayerExitButton.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -60,7 +108,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:Assets/Textures/MusicPlayerExitButton.png;Assets/Textures/MusicPlayerExitButton
+/build:Assets/Textures/MusicPlayerExitButton.png
 
 #begin Assets/Textures/MusicPlayerExitButton.png
 /importer:TextureImporter
@@ -84,7 +132,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:Assets/Textures/MusicPlayerMover.png;Assets/Textures/MusicPlayerMover
+/build:Assets/Textures/MusicPlayerMover.png
 
 #begin Assets/Textures/MusicPlayerMover.png
 /importer:TextureImporter
@@ -108,7 +156,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:Assets/Textures/MusicPlayerMusicIcon.png;Assets/Textures/MusicPlayerMusicIcon
+/build:Assets/Textures/MusicPlayerMusicIcon.png
 
 #begin Assets/Textures/MusicPlayerMusicIcon.png
 /importer:TextureImporter
@@ -132,7 +180,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:Assets/Textures/MusicPlayerNextButton.png;Assets/Textures/MusicPlayerNextButton
+/build:Assets/Textures/MusicPlayerNextButton.png
 
 #begin Assets/Textures/MusicPlayerNextButton.png
 /importer:TextureImporter
@@ -156,7 +204,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:Assets/Textures/MusicPlayerPanel.png;Assets/Textures/MusicPlayerPanel
+/build:Assets/Textures/MusicPlayerPanel.png
 
 #begin Assets/Textures/MusicPlayerPanel.png
 /importer:TextureImporter
@@ -180,7 +228,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:Assets/Textures/MusicPlayerPauseButton.png;Assets/Textures/MusicPlayerPauseButton
+/build:Assets/Textures/MusicPlayerPauseButton.png
 
 #begin Assets/Textures/MusicPlayerPauseButton.png
 /importer:TextureImporter
@@ -204,7 +252,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:Assets/Textures/MusicPlayerPlayButton.png;Assets/Textures/MusicPlayerPlayButton
+/build:Assets/Textures/MusicPlayerPlayButton.png
 
 #begin Assets/Textures/MusicPlayerPlayButton.png
 /importer:TextureImporter
@@ -228,7 +276,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:Assets/Textures/MusicPlayerPreviousButton.png;Assets/Textures/MusicPlayerPreviousButton
+/build:Assets/Textures/MusicPlayerPreviousButton.png
 
 #begin Assets/Textures/MusicPlayerPreviousButton.png
 /importer:TextureImporter
@@ -252,7 +300,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:Assets/Textures/Player.png;Assets/Textures/Player
+/build:Assets/Textures/Player.png
 
 #begin Assets/Textures/Player.png
 /importer:TextureImporter
@@ -278,6 +326,30 @@
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/PlayerHead.png
 
+#begin Assets/Textures/PlayerHead.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerHead.png
+
+#begin Assets/Textures/PlayerLegs.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerLegs.png
+
 #begin Assets/Textures/PlayerLegs.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -300,7 +372,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:Assets/Textures/PlayerRightHand.png;Assets/Textures/PlayerRightHand
+/build:Assets/Textures/PlayerRightHand.png
 
 #begin Assets/Textures/PlayerRightHand.png
 /importer:TextureImporter
@@ -326,6 +398,30 @@
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/PlayerTorso.png
 
+#begin Assets/Textures/PlayerTorso.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerTorso.png
+
+#begin Assets/Textures/PlayerWalkingHead.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerWalkingHead.png
+
 #begin Assets/Textures/PlayerWalkingHead.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -348,7 +444,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:Assets/Textures/PlayerWalkingLegs.png;Assets/Textures/PlayerWalkingLegs
+/build:Assets/Textures/PlayerWalkingLegs.png
 
 #begin Assets/Textures/PlayerWalkingLegs.png
 /importer:TextureImporter
@@ -372,7 +468,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:Assets/Textures/PlayerWalkingTorso.png;Assets/Textures/PlayerWalkingTorso
+/build:Assets/Textures/PlayerWalkingTorso.png
 
 #begin Assets/Textures/PlayerWalkingTorso.png
 /importer:TextureImporter
@@ -396,7 +492,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:Assets/Textures/Screenshot_1.png;Assets/Textures/Screenshot_1
+/build:Assets/Textures/Screenshot_1.png
 
 #begin Assets/Textures/Screenshot_1.png
 /importer:TextureImporter
@@ -420,7 +516,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:Assets/Textures/Test.png;Assets/Textures/Test
+/build:Assets/Textures/Test.png
 
 #begin Assets/Textures/Test.png
 /importer:TextureImporter
