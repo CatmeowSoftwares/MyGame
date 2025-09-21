@@ -554,15 +554,24 @@ namespace MyGame
             Enemy = 3,
             Projectile = 4,
             Item = 5,
-        }
+        }                                                                                                                                               
         public ObjectType Type { get { return type; } set { type = value; } }
         private ObjectType type = ObjectType.None;
+
+        public bool CollisionDisabled { get { return collisionDisabled; } set { collisionDisabled = value; } }
+        private bool collisionDisabled = false;
+
+
+
+
+
+        public virtual void OnCollide()
+        {
+
+        }
     }
 
-    public class Projectile : ColliderObject
-    {
-
-    }
+    
     public class Player : Character
     {
         public string Name 
@@ -661,7 +670,6 @@ namespace MyGame
         private PlayerState lastPlayerState = PlayerState.None;
 
 
-
         public void Initialize()
         {
             try
@@ -687,7 +695,8 @@ namespace MyGame
                 RectangleOffset = new Vector2(10, 0);
             }
 
-
+            InitializeMusicPlayer();
+            currentSong = content.Load<Song>("Assets/ForestDayMorning");
             rightHand = new GameObject();
             rightHand.Texture = AssetManager.GetTexture("PlayerRightHand1");
             rightHand.Animation = new Animation(rightHand);
@@ -699,7 +708,7 @@ namespace MyGame
             leftHand.Origin = leftHand.GetSize() / 2;
             
             
-            handPosition = new Vector2(12, 1);
+            handPosition = new Vector2(12, 1) + Position;
 
 
             head = new GameObject();
@@ -734,6 +743,7 @@ namespace MyGame
             for (int i = 0; i < itemSlots.Length; i++)
             {
                 ItemSlot itemSlot = new ItemSlot();
+                itemSlot.Texture = ItemSlot.texture;
                 itemSlot.index = i;
                 x = 24 * (i % 4);
                 y = i % 4 == 0 ? y + 24 : y;
@@ -744,23 +754,24 @@ namespace MyGame
             }
 
 
-            //Item1 item1 = new Item1();
-            //item1.Texture = AssetManager.GetTexture("Item1");
-            //itemSlots[0].AddItem(item1);
+            Pistol pistol = new Pistol();
+            itemSlots[0].AddItem(pistol);
+
+            Sword sword = new Sword();
+            itemSlots[1].AddItem(sword);
 
         }
         public override void Update(GameTime gameTime)
         {
 
-           
-            UpdateMusic(gameTime);
 
+            UpdateMusic(gameTime);
+            if (Input.IsKeyPressed(Keys.F11)) uiHidden = !uiHidden;
             if (Input.IsKeyDown(Keys.A))
             {
                 Vector2 velocity = Velocity;
                 velocity.X -= (float)(MoveSpeed * gameTime.ElapsedGameTime.TotalSeconds);
                 velocity.X = Math.Max(-maxSpeed, velocity.X);
-                direction = (velocity.X < 0) ? -1 : 1;
                 Velocity = velocity;
                 playerState = PlayerState.Walking;
             }
@@ -795,9 +806,10 @@ namespace MyGame
             }
             else
             {
-                direction = (Velocity.X < 0) ? -1 : 1;
+                if (Velocity.X < 0.0f) direction = -1;
+                else if (Velocity.X > 0.0f) direction = 1; ;
             }
-
+            
 
 
             if (Input.IsKeyPressed(Keys.D1)) { selectedItemIndex = 0; }
@@ -813,7 +825,22 @@ namespace MyGame
 
             currentlyHeldItem = itemSlots[selectedItemIndex].item;
 
-
+            //handPosition = new Vector2(12, 1) + Main.camera.GetTopLeft();
+            if (currentlyHeldItem != null)
+            {
+                currentlyHeldItem.Position = Position;
+                //Main.AddObject(currentlyHeldItem);
+                if (currentlyHeldItem.useStyle == Item.UseStyle.Aim)
+                {
+                    //currentlyHeldItem.Rotation = LookAt(Input.mouseState.Position.ToVector2() + Main.camera.GetTopLeft() - currentlyHeldItem.Position);
+                }
+                if (Input.IsMouseButtonPressed(Input.MouseButton.Left))
+                {
+                   
+                    currentlyHeldItem.OnUse();
+                }
+            }
+            /*
             for (int i = 0; i < itemSlots.Length; ++i)
             {
                 if (itemSlots[i].Hovering)
@@ -834,13 +861,26 @@ namespace MyGame
 
             }
 
-
+            */
             if (currentItemInCursor != null)
             {
                 currentItemInCursor.Position = new Vector2(Input.mouseState.X, Input.mouseState.Y) + currentItemInCursor.GetSize() / 2.0f;
 
                 for (int i = 0; i < itemSlots.Length; ++i)
                 {
+                    if (itemSlots[i].item != null)
+                    
+                    if (itemSlots[i] == itemSlots[selectedItemIndex])
+                    {
+                        itemSlots[i].Resize(1.1f);
+                        //itemSlots[i].Scale = new Vector2(2.0f);
+                    }
+                    else
+                    {
+                        itemSlots[i].Resize(1.0f);
+                    }
+
+                    
                     if (itemSlots[i].Pressed)
                     {
                         if (itemSlots[i].item != null)
@@ -848,13 +888,13 @@ namespace MyGame
                             Item temp = currentItemInCursor;
                             itemSlots[i].item = temp;
                             currentItemInCursor = itemSlots[i].item;
-                            
+
                         }
                         else
                         {
                             itemSlots[i].item = currentItemInCursor;
                             currentItemInCursor = null;
-                        }    
+                        }
                     }
 
                 }
@@ -866,6 +906,18 @@ namespace MyGame
             {
                 for (int i = 0; i < itemSlots.Length; ++i)
                 {
+                    if (itemSlots[i].item != null)
+                    
+                    if (itemSlots[i] == itemSlots[selectedItemIndex])
+                    {
+                        itemSlots[i].Resize(1.1f);
+                    }
+                    else
+                    {
+                        itemSlots[i].Resize(1.0f);
+                    }
+                    
+
                     if (itemSlots[i].Pressed)
                     {
                         if (itemSlots[i].item != null)
@@ -889,6 +941,13 @@ namespace MyGame
             rightHand.Position = Position + rightHandOffset;
             Vector2 legsOffset = (direction == -1) ? bodyPartOffsetsLeft[(int)Part.Legs] : bodyPartOffsetsRight[(int)Part.Legs];
             legs.Position = Position + legsOffset;
+
+
+            head.Effects = (direction == -1) ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
+            torso.Effects = (direction == -1) ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
+            leftHand.Effects = (direction == -1) ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
+            rightHand.Effects = (direction == -1) ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
+            legs.Effects = (direction == -1) ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
 
 
             if (currentlyHeldItem != null)
@@ -969,6 +1028,27 @@ namespace MyGame
                 rightHand.LayerDepth = 0.15f;
                 torso.LayerDepth = 0.15f;
                 legs.LayerDepth = 0.15f;
+
+
+                if (currentlyHeldItem != null)
+                {
+                    if (currentlyHeldItem.holdStyle == Item.HoldStyle.Aim)
+                    {
+                        Vector2 mousePos = Input.mouseState.Position.ToVector2() + Main.camera.GetTopLeft();
+                        float angel = LookAt(mousePos - rightHand.Position);
+                        rightHand.Rotation = angel + MathHelper.ToRadians(-90.0f);
+
+
+                    }
+                    else if (currentlyHeldItem.holdStyle == Item.HoldStyle.Front)
+                    {
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine("ARE YOU TRYING TO MODIFY DIRECTION????????????");
+                direction = 1;
             }
 
             if (playerState != lastPlayerState)
@@ -1015,7 +1095,25 @@ namespace MyGame
     
         }
 
-
+        public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
+        {
+            if (currentlyHeldItem != null && currentlyHeldItem.Texture != null)
+            {
+                spriteBatch.Draw(
+                        currentlyHeldItem.Texture,
+                        currentlyHeldItem.Position,
+                        currentlyHeldItem.SourceRectangle,
+                        currentlyHeldItem.Color,
+                        currentlyHeldItem.Rotation,
+                        currentlyHeldItem.Origin,
+                        currentlyHeldItem.Scale,
+                        currentlyHeldItem.Effects,
+                        currentlyHeldItem.LayerDepth
+                        );
+                
+            }
+            base.Draw(spriteBatch, gameTime);
+        }
 
         private float LookAt(Vector2 direction)
         {
@@ -1038,28 +1136,28 @@ namespace MyGame
 
 
 
-        private static Button musicPlayerExitButton;
-        private static Texture2D musicPlayerPlayButtonTexture;
-        private static Texture2D musicPlayerPauseButtonTexture;
-        private static Button musicPlayerNextButton;
-        private static Button musicPlayerPreviousButton;
-        private static UIObject musicPlayerMusicIcon;
-        private static UIObject musicPlayerPanel;
-        private static Button musicPlayerMover;
-        private static Button musicPlayerPlayPauseButton;
-        private static bool musicPlayerPaused = true;
-        private static bool musicPlayerHidden = true;
-        private static SongCollection musics;
-        private static Container musicPlayerContainer;
+        private Button musicPlayerExitButton;
+        private Texture2D musicPlayerPlayButtonTexture;
+        private Texture2D musicPlayerPauseButtonTexture;
+        private Button musicPlayerNextButton;
+        private Button musicPlayerPreviousButton;
+        private UIObject musicPlayerMusicIcon;
+        private UIObject musicPlayerPanel;
+        private Button musicPlayerMover;
+        private Button musicPlayerPlayPauseButton;
+        private bool musicPlayerPaused = true;
+        private bool musicPlayerHidden = true;
+        private SongCollection musics;
+        private Container musicPlayerContainer;
 
 
-        private static Song currentSong;
+        private Song currentSong;
        
-        public static void InitializeStatic()
+        public void InitializeStatic()
         {                                                          
             InitializeMusicPlayer();
         }
-        private static void InitializeMusicPlayer()
+        private void InitializeMusicPlayer()
         {
             musicPlayerContainer = new Container();
 
@@ -1152,17 +1250,14 @@ namespace MyGame
 
             }
         }
-        public static void LoadContentStatic(ContentManager content)
-        {
-            currentSong = content.Load<Song>("Assets/ForestDayMorning");
-        }
-        public static void LoadTextures()
+  
+        public void LoadTextures()
         {
             LoadMusicPlayerTextures();
         }
 
         
-        private static void LoadMusicPlayerTextures()
+        private void LoadMusicPlayerTextures()
         {
             try
             {
@@ -1205,7 +1300,7 @@ namespace MyGame
 
         }
 
-        public static void DrawMusicPlayer(SpriteBatch spriteBatch)
+        public void DrawMusicPlayer(SpriteBatch spriteBatch)
         {
             if (musicPlayerHidden) { return; }
             musicPlayerContainer.Draw(spriteBatch);   
@@ -1213,7 +1308,7 @@ namespace MyGame
         }
 
 
-        private static void ReadFiles(string path)
+        private void ReadFiles(string path)
         {
             musics.Clear();
             string musicDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
@@ -1262,7 +1357,61 @@ namespace MyGame
         {
             // idk
         }
+
     }
+
+    public class Bullet : Projectile
+    {
+       
+    }
+    public class Projectile : PhysicsObject
+    {
+        public override void Update(GameTime gameTime)
+        {
+            
+            base.Update(gameTime);
+        }
+        public override void OnCollide()
+        {
+            Main.RemoveObject(this);
+            base.OnCollide();
+        }
+    }
+
+    public class Sword : BaseSword
+    {
+        public Sword()
+        {
+            if (AssetManager.LoadedTextures)
+            {
+                icon = AssetManager.GetTexture("Sword");
+                Texture = AssetManager.GetTexture("Sword");
+            }
+        }
+    }
+    public class Pistol : BaseGun
+    {
+        public Pistol()
+        {
+            if (AssetManager.LoadedTextures)
+            {
+                icon = AssetManager.GetTexture("Gun");
+                Texture = AssetManager.GetTexture("Gun");
+            }
+            useStyle = UseStyle.Aim;
+            holdStyle = HoldStyle.Aim;
+            clickType = ClickType.Press;
+        }
+        public override void OnUse()
+        {
+
+            Bullet bullet = new Bullet();
+
+            Main.AddObject(bullet);
+            base.OnUse();
+        }
+    }
+
 
     public class BaseSword : Item
     {
@@ -1802,6 +1951,11 @@ namespace MyGame
         {
 
         }
+        public virtual void Draw(SpriteBatch spriteBatch, GameTime gameTime)
+        {
+
+        }
+
         
     }
     public class Object
@@ -1819,6 +1973,7 @@ namespace MyGame
                     throw new System.Exception("Failed to set Texture");
                 }
                 texture = value;
+
             }
         }
         public Vector2 GetSize()
@@ -1981,19 +2136,28 @@ namespace MyGame
         {
 
         }
-        public void Resize(int px, int py)
+        public void Resize(float value)
         {
-            Rectangle rect = this.Rectangle;
-            rect.X += px;
-            rect.Y += py;
-            rect.Width -= px;
-            rect.Height -= py;
+            if (Texture == null)
+            {
+                Scale = new Vector2(value);
+                return;
+            }
+            Vector2 newScale = new Vector2(value);
 
-            this.Rectangle = rect;
+            Vector2 size = GetSize();
+            Vector2 oldSize = size * this.Scale;
+            Vector2 newSize = size * newScale;
+            this.Position += (oldSize - newSize) / 2.0f;
+            Scale = newScale;
+
         }
+
     }
     public static class AssetManager
     {
+        public static bool LoadedTextures { get { return loadedTextures; } }
+        private static bool loadedTextures = false;
         private static Dictionary<String, Texture2D> textures = new Dictionary<string, Texture2D>();
         public static Dictionary<String, Texture2D> GetTextures()
         {
@@ -2040,6 +2204,7 @@ namespace MyGame
                     Console.WriteLine(e);   
                 }
             }
+            loadedTextures = true;
         }
         public static void LoadAudio(ContentManager contentManager, string path = "Content/Assets/Audio")
         {
@@ -2070,14 +2235,14 @@ namespace MyGame
     public class Main : Game
     {
         private static GraphicsDeviceManager _graphics;
-        private static SpriteBatch _spriteBatch;
+        private static SpriteBatch spriteBatch;
 
         private static List<Object> objects = new List<Object>();
 
 
         private List<Object> objectsToUpdate = new List<Object>();
         private List<Object> objectsToDraw = new List<Object>();
-        private List<Object> objectsToRemove = new List<Object>();
+        private static List<Object> objectsToRemove = new List<Object>();
 
         private static Player player;
         private static ProgressBar progressBar;
@@ -2112,6 +2277,9 @@ namespace MyGame
             _graphics.PreferredBackBufferWidth = 640;
             _graphics.PreferredBackBufferHeight = 360;
             Window.Title = "Catmeow";
+            _graphics.GraphicsProfile = GraphicsProfile.HiDef;
+            _graphics.PreferMultiSampling = true;
+
             _graphics.ApplyChanges();
             Console.WriteLine("End of Main Construction");
         }
@@ -2122,7 +2290,6 @@ namespace MyGame
             test = new GameObject();
             player = new Player();
             player.Initialize();
-            Player.InitializeStatic();
             quadTreeRoot.rectangle = new Rectangle(Int32.MinValue, Int32.MinValue, Int32.MaxValue, Int32.MaxValue);
             button = new Button();
             button.Position = new Vector2(100.0f, 100.0f);
@@ -2139,16 +2306,15 @@ namespace MyGame
         protected override void LoadContent()
         {
             Console.WriteLine("Start of Loading Content");
-            _spriteBatch = new SpriteBatch(GraphicsDevice);
+            spriteBatch = new SpriteBatch(GraphicsDevice);
             AssetManager.LoadTextures(Content);
             ItemSlot.texture = AssetManager.GetTexture("ItemSlot");
             try { spriteFont = this.Content.Load<SpriteFont>("Assets/Font"); }
             catch (Exception e) { Console.WriteLine(e); }
             player.LoadContent(Content);
-            Player.LoadContentStatic(Content);
             test.Texture = AssetManager.GetTexture("Test");
             test.Origin = test.GetSize()/2.0f;
-            Player.LoadTextures();
+            player.LoadTextures();
             try
             {                                              
                 Console.WriteLine("Setting textures successful!");
@@ -2232,39 +2398,42 @@ namespace MyGame
 
 
                     // resolve collision
-                    foreach (var obj2 in objects.OfType<PhysicsObject>())
+                    if (!physicsObject.CollisionDisabled)
                     {
-                        PhysicsObject obj1 = (PhysicsObject)obj;
-                        if (obj1 == obj2) { continue; }
-
-                        Rectangle a = obj1.Rectangle;
-                        Rectangle b = obj2.Rectangle;
-                        Vector2 aPos = obj1.Position;
-                        Vector2 bPos = obj2.Position;
-
-                        if (a.Intersects(b))
+                        foreach (var obj2 in objects.OfType<PhysicsObject>())
                         {
-                            Rectangle intersect = Rectangle.Intersect(a, b);
-                            aPos.X -= intersect.Width / 2;
-                            aPos.Y -= intersect.Height / 2;
-                            bPos.X += intersect.Width / 2;
-                            bPos.Y += intersect.Height / 2;
+                            PhysicsObject obj1 = (PhysicsObject)obj;
+                            if (obj1 == obj2) { continue; }
+
+                            Rectangle a = obj1.Rectangle;
+                            Rectangle b = obj2.Rectangle;
+                            Vector2 aPos = obj1.Position;
+                            Vector2 bPos = obj2.Position;
+
+                            if (a.Intersects(b))
+                            {
+                                Rectangle intersect = Rectangle.Intersect(a, b);
+                                aPos.X -= intersect.Width / 2;
+                                aPos.Y -= intersect.Height / 2;
+                                bPos.X += intersect.Width / 2;
+                                bPos.Y += intersect.Height / 2;
+
+                            }
+
+                            else if (b.Intersects(a))
+                            {
+                                Rectangle intersect = Rectangle.Intersect(b, a);
+                                aPos.X += intersect.Width / 2;
+                                aPos.Y += intersect.Height / 2;
+                                bPos.X -= intersect.Width / 2;
+                                bPos.Y -= intersect.Height / 2;
+
+                            }
+
+                            obj1.Position = aPos;
+                            obj2.Position = bPos;
 
                         }
-
-                        else if (b.Intersects(a))
-                        {
-                            Rectangle intersect = Rectangle.Intersect(b, a);
-                            aPos.X += intersect.Width / 2;
-                            aPos.Y += intersect.Height / 2;
-                            bPos.X -= intersect.Width / 2;
-                            bPos.Y -= intersect.Height / 2;
-
-                        }
-
-                        obj1.Position = aPos;
-                        obj2.Position = bPos;
-
                     }
                 }
 
@@ -2319,38 +2488,83 @@ namespace MyGame
         private int fps = 0;
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.Black); 
+            GraphicsDevice.Clear(Color.Black);
             // TODO: Add your drawing code here
             Matrix transform = Matrix.CreateTranslation(-camera.GetTopLeft().X, -camera.GetTopLeft().Y, 0);
-            _spriteBatch.Begin(SpriteSortMode.BackToFront,samplerState: SamplerState.PointWrap, transformMatrix: transform);
-            DrawGameObjects(_spriteBatch);
-            //DrawColliders(_spriteBatch);
-            //DrawCollidersOutline<UIObject>(_spriteBatch);
+            spriteBatch.Begin(SpriteSortMode.Deferred, samplerState: SamplerState.PointWrap, transformMatrix: transform);
 
 
-            _spriteBatch.End();
+            foreach (GameObject obj in objectsToDraw.OfType<GameObject>())
+            {
+                if (obj.Hidden || obj.Texture == null) { continue; }
+
+
+                spriteBatch.Draw(
+                    obj.Texture,
+                    obj.Position,
+                    obj.SourceRectangle,
+                    obj.Color,
+                    obj.Rotation,
+                    obj.Origin,
+                    obj.Scale,
+                    obj.Effects,
+                    obj.LayerDepth
+                    );
+                obj.Draw(spriteBatch, gameTime);
+            }
+            
+                //DrawColliders(spriteBatch);
+                //DrawCollidersOutline<UIObject>(spriteBatch);
+
+
+                spriteBatch.End();
 
 
             if (!player.UIHidden)
             {
-                
-                _spriteBatch.Begin(samplerState: SamplerState.PointWrap);
+
+                spriteBatch.Begin(samplerState: SamplerState.PointWrap);
+                //player.DrawUI(spriteBatch);
+                DrawUI(spriteBatch);
                 for (int i = 0; i < player.itemSlots.Length; i++)
                 {
-                    _spriteBatch.Draw(ItemSlot.texture, player.itemSlots[i].Position, Color.White);
+                    //spriteBatch.Draw(ItemSlot.texture, player.itemSlots[i].Position, Color.White);
                     if (player.itemSlots[i].item == null) continue;
-                    _spriteBatch.Draw(player.itemSlots[i].item.Texture, player.itemSlots[i].Position + new Vector2(2, 2), Color.White);
+                    Texture2D tex = player.itemSlots[i].item.icon ?? player.itemSlots[i].item.Texture;
+                    //spriteBatch.Draw(tex, player.itemSlots[i].Position + new Vector2(2, 2), Color.White);
+
+                    
+                    ItemSlot itemSlot = player.itemSlots[i];
+                    spriteBatch.Draw(
+                    itemSlot.item.Texture,
+                    itemSlot.Position + new Vector2(2, 2),
+                    itemSlot.item.SourceRectangle,
+                    itemSlot.item.Color,
+                    itemSlot.item.Rotation,
+                    itemSlot.item.Origin,
+                    itemSlot.Scale,
+                    itemSlot.item.Effects,
+                    itemSlot.item.LayerDepth
+                    );
+                    /*
+                    if (player.itemSlots[i].item == null) continue;
+                    
+                    spriteBatch.Draw(   
+                    (itemSlot.item.icon != null) ? itemSlot.item.icon : itemSlot.item.Texture,
+                    itemSlot.Position + new Vector2(2, 2),
+                    itemSlot.item.Color
+                    );
+                    */
                 }
-                player.DrawUI(_spriteBatch);
-                DrawUI(_spriteBatch);
-                //DrawCollidersOutline<UIObject>(_spriteBatch);
-                //DrawColliders<UIObject>(_spriteBatch);
                 
+                //DrawCollidersOutline<UIObject>(spriteBatch);
+                //DrawColliders<UIObject>(spriteBatch);
+
                 if (player.currentItemInCursor != null)
                 {
                     if (player.currentItemInCursor.Texture != null)
                     {
-                        _spriteBatch.Draw(player.currentItemInCursor.Texture, player.currentItemInCursor.Position, Color.White);
+                        spriteBatch.Draw(player.currentItemInCursor.Texture, player.currentItemInCursor.Position, Color.White);
                     }
                 }
                 time += (float)gameTime.ElapsedGameTime.TotalSeconds;
@@ -2360,14 +2574,15 @@ namespace MyGame
                     progressBar.Value = fps / 60;
                     time = 0.0f;
                 }
-                
-                _spriteBatch.DrawString(spriteFont, fps.ToString(), Vector2.Zero, Color.Magenta);
-                _spriteBatch.End();
+
+                spriteBatch.DrawString(spriteFont, fps.ToString(), Vector2.Zero, Color.Magenta);
+                spriteBatch.End();
 
 
-               
+
             }
             base.Draw(gameTime);
+            
         }
 
 
@@ -2407,28 +2622,10 @@ namespace MyGame
                     );
             }
         }
-        private void DrawGameObjects(SpriteBatch spriteBatch)
-        {
-            foreach (Object obj in objectsToDraw.OfType<GameObject>())
-            {
-                if (obj.Hidden || obj.Texture == null) { continue; }
+
+            
 
 
-                spriteBatch.Draw(
-                    obj.Texture,
-                    obj.Position,
-                    obj.SourceRectangle,
-                    obj.Color,
-                    obj.Rotation,
-                    obj.Origin,
-                    obj.Scale,
-                    obj.Effects,
-                    obj.LayerDepth
-                    );
-
-
-            }
-        }
         private void DrawColliders(SpriteBatch spriteBatch)
         {
             foreach (var obj in objectsToDraw)
@@ -2511,13 +2708,21 @@ namespace MyGame
 
         public static void AddObject(Object obj)
         {
-            if (obj == null) throw new Exception("Failed to... idk");
+            ArgumentNullException.ThrowIfNull(obj);
+            if (objects.Contains(obj)) return;
             objects.Add(obj);
         }
 
         public static void AddObjects(Object[] obj)
         {
             objects.AddRange(obj.ToList());
+        }
+
+        public static void RemoveObject(Object obj)
+        {
+            ArgumentNullException.ThrowIfNull(obj);
+            if (!objects.Contains(obj)) return;
+            objectsToRemove.Add(obj);
         }
 
 

@@ -158,6 +158,126 @@
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/Player.png;Assets/Textures/Player
 
+#begin Assets/Textures/PlayerFemaleHead1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleHead1.png;Assets/Textures/PlayerFemaleHead1
+
+#begin Assets/Textures/PlayerFemaleLeftHand1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleLeftHand1.png;Assets/Textures/PlayerFemaleLeftHand1
+
+#begin Assets/Textures/PlayerFemaleLegs1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleLegs1.png;Assets/Textures/PlayerFemaleLegs1
+
+#begin Assets/Textures/PlayerFemaleRightHand1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleRightHand1.png;Assets/Textures/PlayerFemaleRightHand1
+
+#begin Assets/Textures/PlayerFemaleTorso1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleTorso1.png;Assets/Textures/PlayerFemaleTorso1
+
+#begin Assets/Textures/PlayerFemaleWalkingHead1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleWalkingHead1.png;Assets/Textures/PlayerFemaleWalkingHead1
+
+#begin Assets/Textures/PlayerFemaleWalkingLeftHand1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleWalkingLeftHand1.png;Assets/Textures/PlayerFemaleWalkingLeftHand1
+
+#begin Assets/Textures/PlayerFemaleWalkingLegs1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleWalkingLegs1.png;Assets/Textures/PlayerFemaleWalkingLegs1
+
+#begin Assets/Textures/PlayerFemaleWalkingRightHand1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleWalkingRightHand1.png;Assets/Textures/PlayerFemaleWalkingRightHand1
+
+#begin Assets/Textures/PlayerFemaleWalkingTorso1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleWalkingTorso1.png;Assets/Textures/PlayerFemaleWalkingTorso1
+
 #begin Assets/Textures/PlayerHead1.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -230,42 +350,6 @@
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/PlayerWalkingHead1.png;Assets/Textures/PlayerWalkingHead1
 
-#begin Assets/Textures/PlayerWalkingLeftHand1.png
-/importer:TextureImporter
-/processor:TextureProcessor
-/processorParam:ColorKeyColor=255,0,255,255
-/processorParam:ColorKeyEnabled=True
-/processorParam:GenerateMipmaps=False
-/processorParam:PremultiplyAlpha=True
-/processorParam:ResizeToPowerOfTwo=False
-/processorParam:MakeSquare=False
-/processorParam:TextureFormat=Color
-/build:Assets/Textures/PlayerWalkingLeftHand1.png;Assets/Textures/PlayerWalkingLeftHand1
-
-#begin Assets/Textures/PlayerWalkingLegs1.png
-/importer:TextureImporter
-/processor:TextureProcessor
-/processorParam:ColorKeyColor=255,0,255,255
-/processorParam:ColorKeyEnabled=True
-/processorParam:GenerateMipmaps=False
-/processorParam:PremultiplyAlpha=True
-/processorParam:ResizeToPowerOfTwo=False
-/processorParam:MakeSquare=False
-/processorParam:TextureFormat=Color
-/build:Assets/Textures/PlayerWalkingLegs1.png;Assets/Textures/PlayerWalkingLegs1
-
-#begin Assets/Textures/PlayerWalkingRightHand1.png
-/importer:TextureImporter
-/processor:TextureProcessor
-/processorParam:ColorKeyColor=255,0,255,255
-/processorParam:ColorKeyEnabled=True
-/processorParam:GenerateMipmaps=False
-/processorParam:PremultiplyAlpha=True
-/processorParam:ResizeToPowerOfTwo=False
-/processorParam:MakeSquare=False
-/processorParam:TextureFormat=Color
-/build:Assets/Textures/PlayerWalkingRightHand1.png;Assets/Textures/PlayerWalkingRightHand1
-
 #begin Assets/Textures/PlayerWalkingTorso1.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -289,6 +373,18 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/Reference.png;Assets/Textures/Reference
+
+#begin Assets/Textures/ReferenceFemale.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/ReferenceFemale.png;Assets/Textures/ReferenceFemale
 
 #begin Assets/Textures/Sword.png
 /importer:TextureImporter
