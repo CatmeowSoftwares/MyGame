@@ -624,8 +624,8 @@ namespace MyGame
         {
             new Vector2(0, -10),
             new Vector2(0, 0),
-            new Vector2(12, 11),
             new Vector2(20, 11),
+            new Vector2(12, 11),
             new Vector2(0, 10)
         };
         private enum Part
@@ -656,7 +656,7 @@ namespace MyGame
         private GameObject leftHand;
         private GameObject legs;
         private Vector2 handPosition;
-
+        private Vector2 handOffset = new Vector2(0, 10);
         public enum PlayerState
         {
             None,
@@ -824,22 +824,11 @@ namespace MyGame
             else if (Input.IsKeyPressed(Keys.D0)) { selectedItemIndex = 9; }
 
             currentlyHeldItem = itemSlots[selectedItemIndex].item;
-
+            Vector2 facingOffset = (direction == -1) ? new Vector2(-handOffset.X, handOffset.Y) : handOffset;
+            Vector2 rotatedOffset = Vector2.Transform(facingOffset, Matrix.CreateRotationZ(rightHand.Rotation));
+            handPosition = rightHand.Position + rotatedOffset;
             //handPosition = new Vector2(12, 1) + Main.camera.GetTopLeft();
-            if (currentlyHeldItem != null)
-            {
-                currentlyHeldItem.Position = Position;
-                //Main.AddObject(currentlyHeldItem);
-                if (currentlyHeldItem.useStyle == Item.UseStyle.Aim)
-                {
-                    //currentlyHeldItem.Rotation = LookAt(Input.mouseState.Position.ToVector2() + Main.camera.GetTopLeft() - currentlyHeldItem.Position);
-                }
-                if (Input.IsMouseButtonPressed(Input.MouseButton.Left))
-                {
-                   
-                    currentlyHeldItem.OnUse();
-                }
-            }
+
             /*
             for (int i = 0; i < itemSlots.Length; ++i)
             {
@@ -869,25 +858,26 @@ namespace MyGame
                 for (int i = 0; i < itemSlots.Length; ++i)
                 {
                     if (itemSlots[i].item != null)
-                    
-                    if (itemSlots[i] == itemSlots[selectedItemIndex])
-                    {
-                        itemSlots[i].Resize(1.1f);
-                        //itemSlots[i].Scale = new Vector2(2.0f);
-                    }
-                    else
-                    {
-                        itemSlots[i].Resize(1.0f);
-                    }
 
-                    
+                        if (itemSlots[i] == itemSlots[selectedItemIndex])
+                        {
+                            itemSlots[i].Resize(1.1f);
+                            //itemSlots[i].Scale = new Vector2(2.0f);
+                        }
+                        else
+                        {
+                            itemSlots[i].Resize(1.0f);
+                        }
+
+
                     if (itemSlots[i].Pressed)
                     {
                         if (itemSlots[i].item != null)
                         {
                             Item temp = currentItemInCursor;
-                            itemSlots[i].item = temp;
                             currentItemInCursor = itemSlots[i].item;
+                            itemSlots[i].item = temp;
+                            
 
                         }
                         else
@@ -907,16 +897,16 @@ namespace MyGame
                 for (int i = 0; i < itemSlots.Length; ++i)
                 {
                     if (itemSlots[i].item != null)
-                    
-                    if (itemSlots[i] == itemSlots[selectedItemIndex])
-                    {
-                        itemSlots[i].Resize(1.1f);
-                    }
-                    else
-                    {
-                        itemSlots[i].Resize(1.0f);
-                    }
-                    
+
+                        if (itemSlots[i] == itemSlots[selectedItemIndex])
+                        {
+                            itemSlots[i].Resize(1.1f);
+                        }
+                        else
+                        {
+                            itemSlots[i].Resize(1.0f);
+                        }
+
 
                     if (itemSlots[i].Pressed)
                     {
@@ -952,6 +942,20 @@ namespace MyGame
 
             if (currentlyHeldItem != null)
             {
+                currentlyHeldItem.Position = Position + new Vector2(16, 12);
+                currentlyHeldItem.Effects = (direction == -1) ? SpriteEffects.FlipVertically : SpriteEffects.None;
+                aiming = currentlyHeldItem.holdStyle == Item.HoldStyle.Aim;
+                if (direction == 1)
+                {
+                    //currentlyHeldItem.Position = handPosition; //+ currentlyHeldItem.HandPos;
+
+                }
+                else if (direction == -1)
+                {
+
+                    //Vector2 flippedHandPos = new Vector2(currentlyHeldItem.HandPos.X, currentlyHeldItem.HandPos.Y);
+                    //currentlyHeldItem.Position = handPosition - flippedHandPos;
+                }
                 if (currentlyHeldItem.holdStyle == Item.HoldStyle.None)
                 {
 
@@ -994,6 +998,7 @@ namespace MyGame
             }
             else
             {
+                aiming = false;
             }
 
 
@@ -1008,10 +1013,17 @@ namespace MyGame
                 {
                     if (currentlyHeldItem.holdStyle == Item.HoldStyle.Aim)
                     {
-                        Vector2 mousePos = Input.mouseState.Position.ToVector2() + Main.camera.GetTopLeft();
-                        float angel = LookAt(mousePos - rightHand.Position);
-                        rightHand.Rotation = angel + MathHelper.ToRadians(-90.0f);
-
+                        if (aiming)
+                        {
+                            Vector2 mousePos = Input.mouseState.Position.ToVector2() + Main.camera.GetTopLeft();
+                            float angel = LookAt(mousePos - rightHand.Position);
+                            rightHand.Rotation = angel + MathHelper.ToRadians(-90.0f);
+                            currentlyHeldItem.Rotation = angel;
+                        }
+                        else
+                        {
+                            rightHand.Rotation = 0.0f;
+                        }
 
                     }
                     else if (currentlyHeldItem.holdStyle == Item.HoldStyle.Front)
@@ -1034,11 +1046,17 @@ namespace MyGame
                 {
                     if (currentlyHeldItem.holdStyle == Item.HoldStyle.Aim)
                     {
-                        Vector2 mousePos = Input.mouseState.Position.ToVector2() + Main.camera.GetTopLeft();
-                        float angel = LookAt(mousePos - rightHand.Position);
-                        rightHand.Rotation = angel + MathHelper.ToRadians(-90.0f);
-
-
+                        if (aiming)
+                        {
+                            Vector2 mousePos = Input.mouseState.Position.ToVector2() + Main.camera.GetTopLeft();
+                            float angel = LookAt(mousePos - rightHand.Position);
+                            rightHand.Rotation = angel + MathHelper.ToRadians(-90.0f);
+                            currentlyHeldItem.Rotation = angel;
+                        }
+                        else
+                        {
+                            rightHand.Rotation = 0.0f;
+                        }
                     }
                     else if (currentlyHeldItem.holdStyle == Item.HoldStyle.Front)
                     {
@@ -1115,6 +1133,10 @@ namespace MyGame
             base.Draw(spriteBatch, gameTime);
         }
 
+        public Vector2 GetCenter()
+        {
+            return Position + new Vector2(16, 16);
+        }
         private float LookAt(Vector2 direction)
         {
             return (float)Math.Atan2(direction.Y, direction.X);
@@ -1362,7 +1384,25 @@ namespace MyGame
 
     public class Bullet : Projectile
     {
-       
+        public Bullet(Vector2 position, float rotation)
+        {
+            if (AssetManager.LoadedTextures)
+            {
+                Texture = AssetManager.GetTexture("Bullet");
+            }
+            this.Position = position;
+            this.Rotation = rotation;
+            Vector2 origin = this.Origin;
+            origin.Y = GetSize().Y / 2;
+            this.Origin = origin;
+            this.Velocity = Vector2.Transform(new Vector2(1000, 0), Matrix.CreateRotationZ(rotation));
+
+        }
+        public override void Update(GameTime gameTime)
+        {
+            
+            base.Update(gameTime);
+        }
     }
     public class Projectile : PhysicsObject
     {
@@ -1384,7 +1424,7 @@ namespace MyGame
         {
             if (AssetManager.LoadedTextures)
             {
-                icon = AssetManager.GetTexture("Sword");
+                icon = AssetManager.GetTexture("SwordIcon");
                 Texture = AssetManager.GetTexture("Sword");
             }
         }
@@ -1395,9 +1435,13 @@ namespace MyGame
         {
             if (AssetManager.LoadedTextures)
             {
-                icon = AssetManager.GetTexture("Gun");
+                icon = AssetManager.GetTexture("GunIcon");
                 Texture = AssetManager.GetTexture("Gun");
             }
+            Vector2 origin = this.Origin;
+            origin.Y = GetSize().Y / 2;
+            this.Origin = origin;
+            HandPos = new Vector2(2, 11);
             useStyle = UseStyle.Aim;
             holdStyle = HoldStyle.Aim;
             clickType = ClickType.Press;
@@ -1405,7 +1449,9 @@ namespace MyGame
         public override void OnUse()
         {
 
-            Bullet bullet = new Bullet();
+            Bullet bullet = new Bullet(Position, Rotation);
+
+
 
             Main.AddObject(bullet);
             base.OnUse();
@@ -2297,6 +2343,7 @@ namespace MyGame
             pixel = new Texture2D(GraphicsDevice, 1, 1);
             pixel.SetData(new Color[] { Color.White });
             progressBar = new ProgressBar(CreateRectangleTexture(1, 1));
+            progressBar.Position = new Vector2(0, _graphics.PreferredBackBufferHeight - 8.0f);
             // TODO: Add your initialization logic here
             camera = new Camera(_graphics);
             Console.WriteLine("End of Initialization");
@@ -2446,23 +2493,22 @@ namespace MyGame
                 obj.Rectangle = rect;
                 obj.Position = pos;
 
-
                 if (obj is UIObject)
                 {
                     continue;
                 }
-                if (obj.Texture == null)
+                if (obj.Texture != null)
                 {
-                    continue;
-                }
-                if (
-                        (obj.Position.X + obj.Texture.Width < camera.GetTopLeft().X) ||
-                        (obj.Position.Y + obj.Texture.Height < camera.GetTopLeft().Y) ||
-                        (obj.Position.X > camera.GetTopLeft().X + _graphics.PreferredBackBufferWidth) ||
-                        (obj.Position.Y > camera.GetTopLeft().Y + _graphics.PreferredBackBufferHeight)
-                        )
-                {
-                    objectsToDraw.Remove(obj);
+                    if (
+                            (obj.Position.X + obj.Texture.Width < camera.GetTopLeft().X) ||
+                            (obj.Position.Y + obj.Texture.Height < camera.GetTopLeft().Y) ||
+                            (obj.Position.X > camera.GetTopLeft().X + _graphics.PreferredBackBufferWidth) ||
+                            (obj.Position.Y > camera.GetTopLeft().Y + _graphics.PreferredBackBufferHeight)
+                            )
+                    {
+
+                        objectsToDraw.Remove(obj);
+                    }
                 }
             }
 
@@ -2496,9 +2542,10 @@ namespace MyGame
 
             foreach (GameObject obj in objectsToDraw.OfType<GameObject>())
             {
+                obj.Draw(spriteBatch, gameTime);
                 if (obj.Hidden || obj.Texture == null) { continue; }
 
-
+                
                 spriteBatch.Draw(
                     obj.Texture,
                     obj.Position,
@@ -2510,7 +2557,7 @@ namespace MyGame
                     obj.Effects,
                     obj.LayerDepth
                     );
-                obj.Draw(spriteBatch, gameTime);
+                
             }
             
                 //DrawColliders(spriteBatch);
@@ -2536,15 +2583,15 @@ namespace MyGame
                     
                     ItemSlot itemSlot = player.itemSlots[i];
                     spriteBatch.Draw(
-                    itemSlot.item.Texture,
+                    itemSlot.item.icon ?? itemSlot.item.Texture,
                     itemSlot.Position + new Vector2(2, 2),
-                    itemSlot.item.SourceRectangle,
-                    itemSlot.item.Color,
-                    itemSlot.item.Rotation,
-                    itemSlot.item.Origin,
+                    null,
+                    Color.White,
+                    0.0f,
+                    Vector2.Zero,
                     itemSlot.Scale,
-                    itemSlot.item.Effects,
-                    itemSlot.item.LayerDepth
+                    0.0f,
+                    0.0f
                     );
                     /*
                     if (player.itemSlots[i].item == null) continue;
@@ -2575,7 +2622,7 @@ namespace MyGame
                     time = 0.0f;
                 }
 
-                spriteBatch.DrawString(spriteFont, fps.ToString(), Vector2.Zero, Color.Magenta);
+                spriteBatch.DrawString(spriteFont, fps.ToString(), new Vector2(0, _graphics.PreferredBackBufferHeight - 16.0f), Color.Magenta);
                 spriteBatch.End();
 
 

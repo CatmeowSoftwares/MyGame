@@ -26,6 +26,30 @@
 /processorParam:Quality=Best
 /build:Assets/ForestDayMorning.ogg
 
+#begin Assets/Textures/Bullet.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/Bullet.png
+
+#begin Assets/Textures/Bullet.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/Bullet.png
+
 #begin Assets/Textures/Gun.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -37,6 +61,42 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/Gun.png;Assets/Textures/Gun
+
+#begin Assets/Textures/Gun.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/Gun.png
+
+#begin Assets/Textures/Gun.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/Gun.png
+
+#begin Assets/Textures/GunIcon.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/GunIcon.png
 
 #begin Assets/Textures/ItemSlot.png
 /importer:TextureImporter
@@ -50,6 +110,30 @@
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/ItemSlot.png;Assets/Textures/ItemSlot
 
+#begin Assets/Textures/ItemSlot.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/ItemSlot.png
+
+#begin Assets/Textures/ItemSlot.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/ItemSlot.png
+
 #begin Assets/Textures/MusicPlayerExitButton.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -61,6 +145,30 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/MusicPlayerExitButton.png;Assets/Textures/MusicPlayerExitButton
+
+#begin Assets/Textures/MusicPlayerExitButton.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/MusicPlayerExitButton.png
+
+#begin Assets/Textures/MusicPlayerExitButton.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/MusicPlayerExitButton.png
 
 #begin Assets/Textures/MusicPlayerMover.png
 /importer:TextureImporter
@@ -74,6 +182,30 @@
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/MusicPlayerMover.png;Assets/Textures/MusicPlayerMover
 
+#begin Assets/Textures/MusicPlayerMover.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/MusicPlayerMover.png
+
+#begin Assets/Textures/MusicPlayerMover.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/MusicPlayerMover.png
+
 #begin Assets/Textures/MusicPlayerMusicIcon.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -85,6 +217,30 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/MusicPlayerMusicIcon.png;Assets/Textures/MusicPlayerMusicIcon
+
+#begin Assets/Textures/MusicPlayerMusicIcon.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/MusicPlayerMusicIcon.png
+
+#begin Assets/Textures/MusicPlayerMusicIcon.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/MusicPlayerMusicIcon.png
 
 #begin Assets/Textures/MusicPlayerNextButton.png
 /importer:TextureImporter
@@ -98,6 +254,30 @@
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/MusicPlayerNextButton.png;Assets/Textures/MusicPlayerNextButton
 
+#begin Assets/Textures/MusicPlayerNextButton.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/MusicPlayerNextButton.png
+
+#begin Assets/Textures/MusicPlayerNextButton.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/MusicPlayerNextButton.png
+
 #begin Assets/Textures/MusicPlayerPanel.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -109,6 +289,30 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/MusicPlayerPanel.png;Assets/Textures/MusicPlayerPanel
+
+#begin Assets/Textures/MusicPlayerPanel.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/MusicPlayerPanel.png
+
+#begin Assets/Textures/MusicPlayerPanel.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/MusicPlayerPanel.png
 
 #begin Assets/Textures/MusicPlayerPauseButton.png
 /importer:TextureImporter
@@ -122,6 +326,30 @@
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/MusicPlayerPauseButton.png;Assets/Textures/MusicPlayerPauseButton
 
+#begin Assets/Textures/MusicPlayerPauseButton.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/MusicPlayerPauseButton.png
+
+#begin Assets/Textures/MusicPlayerPauseButton.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/MusicPlayerPauseButton.png
+
 #begin Assets/Textures/MusicPlayerPlayButton.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -133,6 +361,30 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/MusicPlayerPlayButton.png;Assets/Textures/MusicPlayerPlayButton
+
+#begin Assets/Textures/MusicPlayerPlayButton.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/MusicPlayerPlayButton.png
+
+#begin Assets/Textures/MusicPlayerPlayButton.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/MusicPlayerPlayButton.png
 
 #begin Assets/Textures/MusicPlayerPreviousButton.png
 /importer:TextureImporter
@@ -146,6 +398,30 @@
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/MusicPlayerPreviousButton.png;Assets/Textures/MusicPlayerPreviousButton
 
+#begin Assets/Textures/MusicPlayerPreviousButton.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/MusicPlayerPreviousButton.png
+
+#begin Assets/Textures/MusicPlayerPreviousButton.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/MusicPlayerPreviousButton.png
+
 #begin Assets/Textures/Player.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -157,6 +433,30 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/Player.png;Assets/Textures/Player
+
+#begin Assets/Textures/Player.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/Player.png
+
+#begin Assets/Textures/Player.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/Player.png
 
 #begin Assets/Textures/PlayerFemaleHead1.png
 /importer:TextureImporter
@@ -170,6 +470,30 @@
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/PlayerFemaleHead1.png;Assets/Textures/PlayerFemaleHead1
 
+#begin Assets/Textures/PlayerFemaleHead1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleHead1.png
+
+#begin Assets/Textures/PlayerFemaleHead1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleHead1.png
+
 #begin Assets/Textures/PlayerFemaleLeftHand1.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -181,6 +505,30 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/PlayerFemaleLeftHand1.png;Assets/Textures/PlayerFemaleLeftHand1
+
+#begin Assets/Textures/PlayerFemaleLeftHand1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleLeftHand1.png
+
+#begin Assets/Textures/PlayerFemaleLeftHand1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleLeftHand1.png
 
 #begin Assets/Textures/PlayerFemaleLegs1.png
 /importer:TextureImporter
@@ -194,6 +542,30 @@
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/PlayerFemaleLegs1.png;Assets/Textures/PlayerFemaleLegs1
 
+#begin Assets/Textures/PlayerFemaleLegs1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleLegs1.png
+
+#begin Assets/Textures/PlayerFemaleLegs1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleLegs1.png
+
 #begin Assets/Textures/PlayerFemaleRightHand1.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -205,6 +577,30 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/PlayerFemaleRightHand1.png;Assets/Textures/PlayerFemaleRightHand1
+
+#begin Assets/Textures/PlayerFemaleRightHand1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleRightHand1.png
+
+#begin Assets/Textures/PlayerFemaleRightHand1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleRightHand1.png
 
 #begin Assets/Textures/PlayerFemaleTorso1.png
 /importer:TextureImporter
@@ -218,6 +614,30 @@
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/PlayerFemaleTorso1.png;Assets/Textures/PlayerFemaleTorso1
 
+#begin Assets/Textures/PlayerFemaleTorso1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleTorso1.png
+
+#begin Assets/Textures/PlayerFemaleTorso1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleTorso1.png
+
 #begin Assets/Textures/PlayerFemaleWalkingHead1.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -229,6 +649,30 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/PlayerFemaleWalkingHead1.png;Assets/Textures/PlayerFemaleWalkingHead1
+
+#begin Assets/Textures/PlayerFemaleWalkingHead1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleWalkingHead1.png
+
+#begin Assets/Textures/PlayerFemaleWalkingHead1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleWalkingHead1.png
 
 #begin Assets/Textures/PlayerFemaleWalkingLeftHand1.png
 /importer:TextureImporter
@@ -242,6 +686,30 @@
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/PlayerFemaleWalkingLeftHand1.png;Assets/Textures/PlayerFemaleWalkingLeftHand1
 
+#begin Assets/Textures/PlayerFemaleWalkingLeftHand1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleWalkingLeftHand1.png
+
+#begin Assets/Textures/PlayerFemaleWalkingLeftHand1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleWalkingLeftHand1.png
+
 #begin Assets/Textures/PlayerFemaleWalkingLegs1.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -253,6 +721,30 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/PlayerFemaleWalkingLegs1.png;Assets/Textures/PlayerFemaleWalkingLegs1
+
+#begin Assets/Textures/PlayerFemaleWalkingLegs1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleWalkingLegs1.png
+
+#begin Assets/Textures/PlayerFemaleWalkingLegs1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleWalkingLegs1.png
 
 #begin Assets/Textures/PlayerFemaleWalkingRightHand1.png
 /importer:TextureImporter
@@ -266,6 +758,30 @@
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/PlayerFemaleWalkingRightHand1.png;Assets/Textures/PlayerFemaleWalkingRightHand1
 
+#begin Assets/Textures/PlayerFemaleWalkingRightHand1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleWalkingRightHand1.png
+
+#begin Assets/Textures/PlayerFemaleWalkingRightHand1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleWalkingRightHand1.png
+
 #begin Assets/Textures/PlayerFemaleWalkingTorso1.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -277,6 +793,30 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/PlayerFemaleWalkingTorso1.png;Assets/Textures/PlayerFemaleWalkingTorso1
+
+#begin Assets/Textures/PlayerFemaleWalkingTorso1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleWalkingTorso1.png
+
+#begin Assets/Textures/PlayerFemaleWalkingTorso1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerFemaleWalkingTorso1.png
 
 #begin Assets/Textures/PlayerHead1.png
 /importer:TextureImporter
@@ -290,6 +830,54 @@
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/PlayerHead1.png;Assets/Textures/PlayerHead1
 
+#begin Assets/Textures/PlayerHead1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerHead1.png
+
+#begin Assets/Textures/PlayerHead1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerHead1.png
+
+#begin Assets/Textures/PlayerHeadBlinking.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerHeadBlinking.png
+
+#begin Assets/Textures/PlayerHeadBlinking.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerHeadBlinking.png
+
 #begin Assets/Textures/PlayerLeftHand1.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -301,6 +889,30 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/PlayerLeftHand1.png;Assets/Textures/PlayerLeftHand1
+
+#begin Assets/Textures/PlayerLeftHand1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerLeftHand1.png
+
+#begin Assets/Textures/PlayerLeftHand1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerLeftHand1.png
 
 #begin Assets/Textures/PlayerLegs1.png
 /importer:TextureImporter
@@ -314,6 +926,30 @@
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/PlayerLegs1.png;Assets/Textures/PlayerLegs1
 
+#begin Assets/Textures/PlayerLegs1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerLegs1.png
+
+#begin Assets/Textures/PlayerLegs1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerLegs1.png
+
 #begin Assets/Textures/PlayerRightHand1.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -325,6 +961,30 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/PlayerRightHand1.png;Assets/Textures/PlayerRightHand1
+
+#begin Assets/Textures/PlayerRightHand1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerRightHand1.png
+
+#begin Assets/Textures/PlayerRightHand1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerRightHand1.png
 
 #begin Assets/Textures/PlayerTorso1.png
 /importer:TextureImporter
@@ -338,6 +998,30 @@
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/PlayerTorso1.png;Assets/Textures/PlayerTorso1
 
+#begin Assets/Textures/PlayerTorso1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerTorso1.png
+
+#begin Assets/Textures/PlayerTorso1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerTorso1.png
+
 #begin Assets/Textures/PlayerWalkingHead1.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -349,6 +1033,30 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/PlayerWalkingHead1.png;Assets/Textures/PlayerWalkingHead1
+
+#begin Assets/Textures/PlayerWalkingHead1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerWalkingHead1.png
+
+#begin Assets/Textures/PlayerWalkingHead1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerWalkingHead1.png
 
 #begin Assets/Textures/PlayerWalkingTorso1.png
 /importer:TextureImporter
@@ -362,6 +1070,30 @@
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/PlayerWalkingTorso1.png;Assets/Textures/PlayerWalkingTorso1
 
+#begin Assets/Textures/PlayerWalkingTorso1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerWalkingTorso1.png
+
+#begin Assets/Textures/PlayerWalkingTorso1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/PlayerWalkingTorso1.png
+
 #begin Assets/Textures/Reference.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -373,6 +1105,30 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/Reference.png;Assets/Textures/Reference
+
+#begin Assets/Textures/Reference.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/Reference.png
+
+#begin Assets/Textures/Reference.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/Reference.png
 
 #begin Assets/Textures/ReferenceFemale.png
 /importer:TextureImporter
@@ -386,6 +1142,30 @@
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/ReferenceFemale.png;Assets/Textures/ReferenceFemale
 
+#begin Assets/Textures/ReferenceFemale.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/ReferenceFemale.png
+
+#begin Assets/Textures/ReferenceFemale.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/ReferenceFemale.png
+
 #begin Assets/Textures/Sword.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -398,6 +1178,42 @@
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/Sword.png;Assets/Textures/Sword
 
+#begin Assets/Textures/Sword.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/Sword.png
+
+#begin Assets/Textures/Sword.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/Sword.png
+
+#begin Assets/Textures/SwordIcon.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/SwordIcon.png
+
 #begin Assets/Textures/Test.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -409,4 +1225,28 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Assets/Textures/Test.png;Assets/Textures/Test
+
+#begin Assets/Textures/Test.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/Test.png
+
+#begin Assets/Textures/Test.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Assets/Textures/Test.png
 
