@@ -317,10 +317,10 @@ namespace MyGame
         {
         }
 
-        public override void Destroy(ref List<Object> objects)
+        public override void Destroy()
         {
             this.objects.Clear();
-            base.Destroy(ref objects);
+            base.Destroy();
         }
     }
 
@@ -763,7 +763,7 @@ namespace MyGame
         }
         public override void Update(GameTime gameTime)
         {
-
+            //Console.WriteLine(Projectile.projectileCount);
 
             UpdateMusic(gameTime);
             if (Input.IsKeyPressed(Keys.F11)) uiHidden = !uiHidden;
@@ -1009,8 +1009,10 @@ namespace MyGame
                 rightHand.LayerDepth = 0.2f;
                 torso.LayerDepth = 0.15f;
                 legs.LayerDepth = 0.15f;
+                
                 if (currentlyHeldItem != null)
                 {
+                    currentlyHeldItem.LayerDepth = 0.1f;
                     if (currentlyHeldItem.holdStyle == Item.HoldStyle.Aim)
                     {
                         if (aiming)
@@ -1044,6 +1046,7 @@ namespace MyGame
 
                 if (currentlyHeldItem != null)
                 {
+                    currentlyHeldItem.LayerDepth = 0.1f;
                     if (currentlyHeldItem.holdStyle == Item.HoldStyle.Aim)
                     {
                         if (aiming)
@@ -1142,10 +1145,7 @@ namespace MyGame
             return (float)Math.Atan2(direction.Y, direction.X);
         }
 
-        public override void Destroy(ref List<Object> objects)
-        {
 
-        }
 
 
 
@@ -1392,10 +1392,10 @@ namespace MyGame
             }
             this.Position = position;
             this.Rotation = rotation;
-            Vector2 origin = this.Origin;
-            origin.Y = GetSize().Y / 2;
-            this.Origin = origin;
+            this.Origin = GetSize() /2.0f;
             this.Velocity = Vector2.Transform(new Vector2(1000, 0), Matrix.CreateRotationZ(rotation));
+            this.Rectangle = new Rectangle(0, 0, 2, 2);
+            RectangleOffset = new Vector2(4, 0);
 
         }
         public override void Update(GameTime gameTime)
@@ -1406,13 +1406,41 @@ namespace MyGame
     }
     public class Projectile : PhysicsObject
     {
+        private bool destroyed = false;
+        public float LifeTime { get { return lifeTime; } set { lifeTime = value; } }
+        private float lifeTime = 5.0f;
+        public static int projectileCount = 0;
+        public Projectile() :base()
+        {
+            ++projectileCount;
+        }
+        public override void Destroy()
+        {
+            if (destroyed) 
+            {
+                return;
+            }
+            destroyed = true;
+            --projectileCount;
+            base.Destroy();
+        }
         public override void Update(GameTime gameTime)
         {
-            
+            if (destroyed) return;
+            lifeTime -= (float)gameTime.ElapsedGameTime.TotalSeconds;
+            if (lifeTime <= 0.0f)
+            {
+                Destroy();
+                Main.RemoveObject(this);
+                return;
+            }
+
             base.Update(gameTime);
         }
         public override void OnCollide()
         {
+            if (destroyed) return;
+            Destroy();
             Main.RemoveObject(this);
             base.OnCollide();
         }
@@ -1446,16 +1474,7 @@ namespace MyGame
             holdStyle = HoldStyle.Aim;
             clickType = ClickType.Press;
         }
-        public override void OnUse()
-        {
-
-            Bullet bullet = new Bullet(Position, Rotation);
-
-
-
-            Main.AddObject(bullet);
-            base.OnUse();
-        }
+        
     }
 
 
@@ -1466,7 +1485,16 @@ namespace MyGame
 
     public class BaseGun : Item
     {
+        public override void OnUse()
+        {
 
+            Bullet bullet = new Bullet(Position, Rotation);
+
+
+
+            Main.AddObject(bullet);
+            base.OnUse();
+        }
     }
     public class DroppedItem : ColliderObject
     {
@@ -2178,7 +2206,7 @@ namespace MyGame
         public Vector2 RectangleOffset { get { return rectangleOffset; } set { rectangleOffset = value; } }
         private Vector2 rectangleOffset;
         public virtual void Update(GameTime gameTime) { }
-        public virtual void Destroy(ref List<Object> objects)
+        public virtual void Destroy()
         {
 
         }
@@ -2388,12 +2416,13 @@ namespace MyGame
                 Exit();
             // process inputs
             Input.UpdateInput();
-            player.Update(gameTime);
             Animation.UpdateAnimations(gameTime);
+            /*
             foreach (var ui in objects.OfType<UIObject>())
             {
                 ui.Update(gameTime);            
             }
+            */
             // process behaviors
             // calculate velocities
             
@@ -2406,8 +2435,9 @@ namespace MyGame
             // TODO: Add your update logic here
             
             objectsToDraw = objects.ToList();
-            foreach (var obj in objects)
+            foreach (var obj in objects.ToList())
             {
+                obj.Update(gameTime);
                 Rectangle cursorRectangle = new Rectangle((int)Input.MousePosition.X, (int)Input.MousePosition.Y, 1, 1);
                 if (obj is GameObject)
                 {
@@ -2518,8 +2548,7 @@ namespace MyGame
 
 
             foreach (var obj in objectsToRemove.ToList())
-            {
-                obj.Destroy(ref objects);
+            { 
                 objects.Remove(obj);
                 objectsToRemove.Remove(obj);
             }
@@ -2561,7 +2590,7 @@ namespace MyGame
             }
             
                 //DrawColliders(spriteBatch);
-                //DrawCollidersOutline<UIObject>(spriteBatch);
+                DrawCollidersOutline<Projectile>(spriteBatch);
 
 
                 spriteBatch.End();
