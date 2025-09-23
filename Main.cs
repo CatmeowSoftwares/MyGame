@@ -104,7 +104,8 @@ namespace MyGame
 
         public static KeyboardState keyboardState;
         private static KeyboardState previousKeyboardState;
-
+        public static bool HoveringUI { get { return hoveringUI; } set { hoveringUI = value; } }
+        private static bool hoveringUI = false;
         public static bool IsAnyKeyPressed()
         {
             return keyboardState.GetPressedKeys().Length != 0;
@@ -129,23 +130,23 @@ namespace MyGame
         {
             if (mouseButton == MouseButton.Left)
             {
-                return mouseState.LeftButton == ButtonState.Pressed && previousMouseState.LeftButton == ButtonState.Released;
+                return mouseState.LeftButton == ButtonState.Pressed && previousMouseState.LeftButton == ButtonState.Released && !hoveringUI;
             }
             else if (mouseButton == MouseButton.Right)
             {
-                return mouseState.RightButton == ButtonState.Pressed && previousMouseState.RightButton == ButtonState.Released;
+                return mouseState.RightButton == ButtonState.Pressed && previousMouseState.RightButton == ButtonState.Released && !hoveringUI;
             }
             else if (mouseButton == MouseButton.Middle)
             {
-                return mouseState.MiddleButton == ButtonState.Pressed && previousMouseState.MiddleButton == ButtonState.Released;
+                return mouseState.MiddleButton == ButtonState.Pressed && previousMouseState.MiddleButton == ButtonState.Released && !hoveringUI;
             }
             else if (mouseButton == MouseButton.X1)
             {
-                return mouseState.XButton1 == ButtonState.Pressed && previousMouseState.XButton1 == ButtonState.Released;
+                return mouseState.XButton1 == ButtonState.Pressed && previousMouseState.XButton1 == ButtonState.Released && !hoveringUI;
             }
             else if (mouseButton == MouseButton.X2)
             {
-                return mouseState.XButton2 == ButtonState.Pressed && previousMouseState.XButton2 == ButtonState.Released;
+                return mouseState.XButton2 == ButtonState.Pressed && previousMouseState.XButton2 == ButtonState.Released && !hoveringUI;
             }
             return false;
         }
@@ -192,6 +193,7 @@ namespace MyGame
             previousMouseState = mouseState;
             mouseState = Mouse.GetState();
             mousePosition = new Vector2(mouseState.X, mouseState.Y);
+            hoveringUI = false;
             ScanForKonamiCode();
             //Diagnostics.Debug.WriteLine("Hello world");
         }
@@ -283,11 +285,6 @@ namespace MyGame
         {
             foreach (var obj in objects)
             {
-                if (obj.Key is Button)
-                {
-                    Button button = (Button)obj.Key;
-                    button.Disabled = true;
-                }
                 obj.Key.Hidden = true;
             }
         }
@@ -295,11 +292,6 @@ namespace MyGame
         {
             foreach (var obj in objects)
             {
-                if (obj.Key is Button)
-                {
-                    Button button = (Button)obj.Key;
-                    button.Disabled = false;
-                }
                 obj.Key.Hidden = false;
             }
         }
@@ -354,7 +346,7 @@ namespace MyGame
 
             if (movePercentage != 1.0f)
                 differenceInPosition *= movePercentage;
-
+            
             var fractionOfPassedTime = deltaTimeInMs / 10;
 
             Center += differenceInPosition * fractionOfPassedTime;
@@ -402,7 +394,6 @@ namespace MyGame
 
 
 
-
     public class Tile
     {
         public int Width {get {return width;}}
@@ -423,13 +414,30 @@ namespace MyGame
        
     }
 
+ 
+    public class AI
+    {
 
+    }
+    public class Enemy : Character
+    {
+
+    }
     public class Character : PhysicsObject
     {
         public float Health { get { return health; } set { health = value; } }
         private float health = 100.0f;
-
-
+        public AI AI { get { return aI; } set { aI = value; } }
+        private AI aI; 
+        public int Direction
+        {
+            get { return direction; }
+            set
+            {
+                direction = value;
+            }
+        }
+        private int direction = 1;
 
         public void Die()
         {
@@ -565,13 +573,23 @@ namespace MyGame
 
 
 
-        public virtual void OnCollide()
+        public virtual void OnCollide(ColliderObject otherCollider)
         {
 
         }
     }
 
-    
+    public static class Settings
+    {
+        public static GraphicsDeviceManager graphics;
+        public static int screenWidth = 640;
+        public static int screenHeight = 480;
+
+        public static void SetSettings()
+        {
+            
+        }
+    }
     public class Player : Character
     {
         public string Name 
@@ -593,8 +611,7 @@ namespace MyGame
 
 
 
-
-        private int direction = 1;
+        
         public float MoveSpeed { get { return moveSpeed; } set { moveSpeed = value; } } 
         private float moveSpeed = 500.0f;
 
@@ -786,8 +803,8 @@ namespace MyGame
             else
             {
                 Vector2 velocity = Velocity;
-                velocity.X -= (float)(MoveSpeed * gameTime.ElapsedGameTime.TotalSeconds) * direction;
-                velocity.X = (direction == 1) ? Math.Max(0, velocity.X) : Math.Min(0, velocity.X);
+                velocity.X -= (float)(MoveSpeed * gameTime.ElapsedGameTime.TotalSeconds) * Direction;
+                velocity.X = (Direction == 1) ? Math.Max(0, velocity.X) : Math.Min(0, velocity.X);
                 Velocity = velocity;
                 playerState = PlayerState.Idle;
             }
@@ -802,12 +819,12 @@ namespace MyGame
 
             if (attacking || aiming)
             {
-                direction = Input.MousePosition.X + Main.camera.GetTopLeft().X < Position.X ? -1 : 1;
+                Direction = Input.MousePosition.X + Main.camera.GetTopLeft().X < Position.X ? -1 : 1;
             }
             else
             {
-                if (Velocity.X < 0.0f) direction = -1;
-                else if (Velocity.X > 0.0f) direction = 1; ;
+                if (Velocity.X < 0.0f) Direction = -1;
+                else if (Velocity.X > 0.0f) Direction = 1; ;
             }
             
 
@@ -824,7 +841,7 @@ namespace MyGame
             else if (Input.IsKeyPressed(Keys.D0)) { selectedItemIndex = 9; }
 
             currentlyHeldItem = itemSlots[selectedItemIndex].item;
-            Vector2 facingOffset = (direction == -1) ? new Vector2(-handOffset.X, handOffset.Y) : handOffset;
+            Vector2 facingOffset = (Direction == -1) ? new Vector2(-handOffset.X, handOffset.Y) : handOffset;
             Vector2 rotatedOffset = Vector2.Transform(facingOffset, Matrix.CreateRotationZ(rightHand.Rotation));
             handPosition = rightHand.Position + rotatedOffset;
             //handPosition = new Vector2(12, 1) + Main.camera.GetTopLeft();
@@ -921,36 +938,36 @@ namespace MyGame
 
             }
 
-            Vector2 headOffset = (direction == -1) ? bodyPartOffsetsLeft[(int)Part.Head] : bodyPartOffsetsRight[(int)Part.Head];
+            Vector2 headOffset = (Direction == -1) ? bodyPartOffsetsLeft[(int)Part.Head] : bodyPartOffsetsRight[(int)Part.Head];
             head.Position = Position + headOffset;
-            Vector2 torsoOffset = (direction == -1) ? bodyPartOffsetsLeft[(int)Part.Torso] : bodyPartOffsetsRight[(int)Part.Torso];
+            Vector2 torsoOffset = (Direction == -1) ? bodyPartOffsetsLeft[(int)Part.Torso] : bodyPartOffsetsRight[(int)Part.Torso];
             torso.Position = Position + torsoOffset;
-            Vector2 leftHandOffset = (direction == -1) ? bodyPartOffsetsLeft[(int)Part.LeftHand] : bodyPartOffsetsRight[(int)Part.LeftHand];
+            Vector2 leftHandOffset = (Direction == -1) ? bodyPartOffsetsLeft[(int)Part.LeftHand] : bodyPartOffsetsRight[(int)Part.LeftHand];
             leftHand.Position = Position + leftHandOffset;
-            Vector2 rightHandOffset = (direction == -1) ? bodyPartOffsetsLeft[(int)Part.RightHand] : bodyPartOffsetsRight[(int)Part.RightHand];
+            Vector2 rightHandOffset = (Direction == -1) ? bodyPartOffsetsLeft[(int)Part.RightHand] : bodyPartOffsetsRight[(int)Part.RightHand];
             rightHand.Position = Position + rightHandOffset;
-            Vector2 legsOffset = (direction == -1) ? bodyPartOffsetsLeft[(int)Part.Legs] : bodyPartOffsetsRight[(int)Part.Legs];
+            Vector2 legsOffset = (Direction == -1) ? bodyPartOffsetsLeft[(int)Part.Legs] : bodyPartOffsetsRight[(int)Part.Legs];
             legs.Position = Position + legsOffset;
 
 
-            head.Effects = (direction == -1) ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
-            torso.Effects = (direction == -1) ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
-            leftHand.Effects = (direction == -1) ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
-            rightHand.Effects = (direction == -1) ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
-            legs.Effects = (direction == -1) ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
+            head.Effects = (Direction == -1) ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
+            torso.Effects = (Direction == -1) ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
+            leftHand.Effects = (Direction == -1) ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
+            rightHand.Effects = (Direction == -1) ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
+            legs.Effects = (Direction == -1) ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
 
 
             if (currentlyHeldItem != null)
             {
                 currentlyHeldItem.Position = Position + new Vector2(16, 12);
-                currentlyHeldItem.Effects = (direction == -1) ? SpriteEffects.FlipVertically : SpriteEffects.None;
+                currentlyHeldItem.Effects = (Direction == -1) ? SpriteEffects.FlipVertically : SpriteEffects.None;
                 aiming = currentlyHeldItem.holdStyle == Item.HoldStyle.Aim;
-                if (direction == 1)
+                if (Direction == 1)
                 {
                     //currentlyHeldItem.Position = handPosition; //+ currentlyHeldItem.HandPos;
 
                 }
-                else if (direction == -1)
+                else if (Direction == -1)
                 {
 
                     //Vector2 flippedHandPos = new Vector2(currentlyHeldItem.HandPos.X, currentlyHeldItem.HandPos.Y);
@@ -1002,7 +1019,7 @@ namespace MyGame
             }
 
 
-            if (direction == 1)
+            if (Direction == 1)
             {
                 head.LayerDepth = 0.15f;
                 leftHand.LayerDepth = 0.1f;
@@ -1012,7 +1029,7 @@ namespace MyGame
                 
                 if (currentlyHeldItem != null)
                 {
-                    currentlyHeldItem.LayerDepth = 0.1f;
+                    currentlyHeldItem.LayerDepth = 0.15f;
                     if (currentlyHeldItem.holdStyle == Item.HoldStyle.Aim)
                     {
                         if (aiming)
@@ -1035,7 +1052,7 @@ namespace MyGame
 
                     
             }
-            else if (direction == -1)
+            else if (Direction == -1)
             {
                 head.LayerDepth = 0.15f;
                 leftHand.LayerDepth = 0.2f;
@@ -1069,7 +1086,7 @@ namespace MyGame
             else
             {
                 Console.WriteLine("ARE YOU TRYING TO MODIFY DIRECTION????????????");
-                direction = 1;
+                Direction = 1;
             }
 
             if (playerState != lastPlayerState)
@@ -1140,9 +1157,9 @@ namespace MyGame
         {
             return Position + new Vector2(16, 16);
         }
-        private float LookAt(Vector2 direction)
+        private float LookAt(Vector2 Direction)
         {
-            return (float)Math.Atan2(direction.Y, direction.X);
+            return (float)Math.Atan2(Direction.Y, Direction.X);
         }
 
 
@@ -1194,11 +1211,11 @@ namespace MyGame
             musicPlayerMover = new Button();
 
 
-            musicPlayerExitButton.Disabled = true;
-            musicPlayerNextButton.Disabled = true;
-            musicPlayerPreviousButton.Disabled = true;
-            musicPlayerPlayPauseButton.Disabled = true;
-            musicPlayerMover.Disabled = true;
+            musicPlayerExitButton.Hidden = true;
+            musicPlayerNextButton.Hidden = true;
+            musicPlayerPreviousButton.Hidden = true;
+            musicPlayerPlayPauseButton.Hidden = true;
+            musicPlayerMover.Hidden = true;
         }
 
         private void UpdateMusic(GameTime gameTime)
@@ -1219,16 +1236,17 @@ namespace MyGame
             if (musicPlayerHidden) { return; }
             musicPlayerContainer.Update(gameTime);
 
-
-            if (MediaPlayer.State == MediaState.Paused || MediaPlayer.State == MediaState.Stopped)
+            musicPlayerPaused = MediaPlayer.State == MediaState.Paused || MediaPlayer.State == MediaState.Stopped;
+            if (musicPlayerPaused)
             {
                 musicPlayerPlayPauseButton.Texture = musicPlayerPaused ? musicPlayerPlayButtonTexture : musicPlayerPauseButtonTexture;
+                
             }
 
 
             if (musicPlayerMover.Down)
             {
-                musicPlayerPaused = MediaPlayer.State == MediaState.Paused || MediaPlayer.State == MediaState.Stopped;
+               
                 musicPlayerContainer.Position = Input.mouseState.Position.ToVector2() + -(new Vector2(95, 31));
             }
 
@@ -1375,16 +1393,13 @@ namespace MyGame
             item.amount += amount;
             itemName = item.name;
         }
-        public void UpdateSlot()
-        {
-            // idk
-        }
+
 
     }
 
     public class Bullet : Projectile
     {
-        public Bullet(Vector2 position, float rotation)
+        public Bullet(ColliderObject whoShotTheProjectile, Vector2 position, float rotation) :base()
         {
             if (AssetManager.LoadedTextures)
             {
@@ -1396,16 +1411,22 @@ namespace MyGame
             this.Velocity = Vector2.Transform(new Vector2(1000, 0), Matrix.CreateRotationZ(rotation));
             this.Rectangle = new Rectangle(0, 0, 2, 2);
             RectangleOffset = new Vector2(4, 0);
+            baseRectangleOffset = new Vector2(4, 0);
 
+            this.WhoShotTheProjectile = whoShotTheProjectile;
         }
         public override void Update(GameTime gameTime)
         {
-            
+            Vector2 rotatedOffset = Vector2.Transform(baseRectangleOffset, Matrix.CreateRotationZ(Rotation));
+            RectangleOffset = rotatedOffset;
             base.Update(gameTime);
         }
     }
     public class Projectile : PhysicsObject
     {
+        public ColliderObject WhoShotTheProjectile { get { return whoShotTheProjectile; } set { whoShotTheProjectile = value; } }
+        private ColliderObject whoShotTheProjectile;
+        protected Vector2 baseRectangleOffset;
         private bool destroyed = false;
         public float LifeTime { get { return lifeTime; } set { lifeTime = value; } }
         private float lifeTime = 5.0f;
@@ -1437,17 +1458,19 @@ namespace MyGame
 
             base.Update(gameTime);
         }
-        public override void OnCollide()
+        public override void OnCollide(ColliderObject otherCollider)
         {
             if (destroyed) return;
             Destroy();
             Main.RemoveObject(this);
-            base.OnCollide();
+            base.OnCollide(otherCollider);
         }
     }
 
     public class Sword : BaseSword
     {
+        public override string name => "Sword";
+        protected override string texturePath => "Sword";
         public Sword()
         {
             if (AssetManager.LoadedTextures)
@@ -1459,12 +1482,15 @@ namespace MyGame
     }
     public class Pistol : BaseGun
     {
+
+        public override string name => "Pistol";
+        protected override string texturePath => "Gun";
         public Pistol()
         {
             if (AssetManager.LoadedTextures)
             {
                 icon = AssetManager.GetTexture("GunIcon");
-                Texture = AssetManager.GetTexture("Gun");
+                Texture = AssetManager.GetTexture(texturePath);
             }
             Vector2 origin = this.Origin;
             origin.Y = GetSize().Y / 2;
@@ -1478,17 +1504,16 @@ namespace MyGame
     }
 
 
-    public class BaseSword : Item
+    public abstract class BaseSword : Item
     {
-
     }
 
-    public class BaseGun : Item
+    public abstract class BaseGun : Item
     {
         public override void OnUse()
         {
 
-            Bullet bullet = new Bullet(Position, Rotation);
+            Bullet bullet = new Bullet(Main.player, Position, Rotation);
 
 
 
@@ -1511,9 +1536,10 @@ namespace MyGame
             
         }
     }
-    public class Item : GameObject 
+    public abstract class Item : GameObject 
     {
-        public string name { get; private set; }
+        public abstract string name { get; }
+        protected abstract string texturePath { get; }
         public string description { get; private set; }
 
         public string customDescription = "";
@@ -1584,13 +1610,6 @@ namespace MyGame
         {
             amount = 0;
         }
-        public virtual void SetStats()
-        {
-            name = "";
-            icon = null;
-
-        }
-
 
     }
     public class ToolTip : UIObject
@@ -1651,9 +1670,22 @@ namespace MyGame
         }
 
 
-        
 
+        public bool Hovering { get { return hovering; } }
+        private bool hovering = false;
 
+        public override void Update(GameTime gameTime)
+        {
+            if (Rectangle.Contains(Input.mouseState.Position))
+            {
+                hovering = true;
+            }
+            else
+            {
+                hovering = false;
+            }
+            base.Update(gameTime);
+        }
 
 
     }
@@ -1740,29 +1772,27 @@ namespace MyGame
     {
 
 
-        public bool Hovering { get { return hovering; } set { hovering = value; } }
         public bool Pressed { get { return pressed; } set { pressed = value; } }
         public bool Down { get { return down; } set { down = value; } }
-        public bool Disabled 
-        { 
+        public new bool Hidden { 
             get 
             { 
-                return disabled; 
+                return base.Hidden; 
             } 
             set 
             { 
-                disabled = value;
-                if (disabled)
+                base.Hidden = value;
+                if (value)
                 {
-                    hovering = false;
                     pressed = false;
                     down = false;
                     wasDown = false;
                 }
-            } 
+            }
         }
-
-        private bool hovering = false;
+                                                                                                
+        public bool Disabled { get { return disabled; } set { disabled = value; } }
+   
         private bool pressed = false;
         private bool down = false;
         private bool disabled = false;
@@ -1775,46 +1805,26 @@ namespace MyGame
 
         public override void Update(GameTime gameTime)
         {
-            if (Hidden || Disabled)
+            base.Update(gameTime);
+            if (Hidden)
             {
                 return;
             }
 
             Rectangle rectangle = this.Rectangle;
-
-            if (rectangle.Contains(Input.mouseState.Position))
+            if (Hovering)
             {
-                hovering = true;
+                Input.HoveringUI = true;
                 down = Input.mouseState.LeftButton == ButtonState.Pressed;
                 pressed = down && !wasDown;
                 wasDown = down;
-
-                /*
-                if (hovering)
-                {
-                    Mouse.SetCursor(MouseCursor.Hand);
-                }
-                else if (pressed)
-                {
-                    //Mouse.SetCursor(MouseCursor.Handle);
-                }
-                else if (down)
-                {
-                    //Mouse.SetCursor(MouseCursor.Handle);
-                }
-                */
-
-
-
-
             }
             else
             {
-                hovering = false;
                 down = false;
                 pressed = false;
-                //Mouse.SetCursor(MouseCursor.Arrow);
             }
+           
 
             
 
@@ -1822,14 +1832,14 @@ namespace MyGame
 
         public override string ToString()
         {
-            return "Hovering: " + hovering.ToString() + "Pressed: " + pressed.ToString() + "Down: " + down.ToString() + "Disabled: " + disabled.ToString(); 
+            return "Hovering: " + Hovering.ToString() + "Pressed: " + pressed.ToString() + "Down: " + down.ToString() + "Disabled: " + disabled.ToString(); 
         }
 
 
 
     }
 
-
+    /*
     public class QuadTree<T>
     {
         public struct Node
@@ -1887,9 +1897,9 @@ namespace MyGame
                         children.Add(n4);
 
 
-                        foreach (var o/*bject*/ in objects)
+                        foreach (var o in objects)
                         {
-                            foreach (var n /*ode*/ in children)
+                            foreach (var n in children)
                             {
                                 if (n.Inside(o))
                                 {
@@ -1899,7 +1909,7 @@ namespace MyGame
                         }
 
 
-                        foreach (var n /*ode*/ in children)
+                        foreach (var n  in children)
                         {
                             if (n.Inside(obj))
                             {
@@ -1953,6 +1963,17 @@ namespace MyGame
         }
 
 
+
+    }
+*/
+
+
+    public class QuadTree
+    {
+        public static QuadTree root;
+        public QuadTree()
+        {
+        }
 
     }
     public class World
@@ -2318,7 +2339,7 @@ namespace MyGame
         private List<Object> objectsToDraw = new List<Object>();
         private static List<Object> objectsToRemove = new List<Object>();
 
-        private static Player player;
+        public static Player player;
         private static ProgressBar progressBar;
         
         public static Camera camera;
@@ -2332,9 +2353,6 @@ namespace MyGame
 
 
         private SpriteFont spriteFont;
-        
-        private QuadTree<Object>.Node quadTreeRoot;
-
         private GameObject test;
         private static bool shouldExit = false;
         private static GameObject currentObjectInCursor = null;
@@ -2351,7 +2369,7 @@ namespace MyGame
             _graphics.PreferredBackBufferWidth = 640;
             _graphics.PreferredBackBufferHeight = 360;
             Window.Title = "Catmeow";
-            _graphics.GraphicsProfile = GraphicsProfile.HiDef;
+            //_graphics.GraphicsProfile = GraphicsProfile.HiDef;
             _graphics.PreferMultiSampling = true;
 
             _graphics.ApplyChanges();
@@ -2364,7 +2382,6 @@ namespace MyGame
             test = new GameObject();
             player = new Player();
             player.Initialize();
-            quadTreeRoot.rectangle = new Rectangle(Int32.MinValue, Int32.MinValue, Int32.MaxValue, Int32.MaxValue);
             button = new Button();
             button.Position = new Vector2(100.0f, 100.0f);
             button.Rectangle = new Rectangle(100, 100, 100, 100);
@@ -2416,7 +2433,6 @@ namespace MyGame
                 Exit();
             // process inputs
             Input.UpdateInput();
-            Animation.UpdateAnimations(gameTime);
             /*
             foreach (var ui in objects.OfType<UIObject>())
             {
@@ -2473,46 +2489,183 @@ namespace MyGame
                     physicsObject.Velocity = velocity;
                     physicsObject.Position += physicsObject.Velocity * (float)gameTime.ElapsedGameTime.TotalSeconds;
 
+                }
+                // resolve collision
 
-                    // resolve collision
-                    if (!physicsObject.CollisionDisabled)
+                if (obj is ColliderObject colliderObject1)
+                {
+                    Projectile projectile1 = null;
+                    if (colliderObject1 is Projectile)
                     {
-                        foreach (var obj2 in objects.OfType<PhysicsObject>())
+                        projectile1 = (Projectile)colliderObject1;
+                    }
+
+                    foreach (ColliderObject colliderObject2 in objects.OfType<ColliderObject>())
+                    {
+                        if (colliderObject1 == colliderObject2) continue;
+                        Projectile projectile2 = null;
+                        if (colliderObject2 is Projectile)
                         {
-                            PhysicsObject obj1 = (PhysicsObject)obj;
+                            projectile2 = (Projectile)colliderObject2;
+                        }
+                        if (projectile1 == projectile2) continue;
+                        if (projectile1 != null)
+                        {
+                            if (projectile2 != null)
+                            {
+                                Rectangle a = projectile1.Rectangle;
+                                Rectangle b = projectile2.Rectangle;
+                                Vector2 aPos = projectile1.Position;
+                                Vector2 bPos = projectile2.Position;
+
+                                if (a.Intersects(b))
+                                {
+                                    projectile1.OnCollide(projectile2);
+                                    projectile2.OnCollide(projectile1);
+                                }
+
+                                else if (b.Intersects(a))
+                                {
+                                    projectile2.OnCollide(projectile1);
+                                    projectile1.OnCollide(projectile2);
+
+                                }
+                            }
+                            else
+                            {
+                                Rectangle a = projectile1.Rectangle;
+                                Rectangle b = colliderObject2.Rectangle;
+                                Vector2 aPos = projectile1.Position;
+                                Vector2 bPos = colliderObject2.Position;
+                                bool selfHit = projectile1.WhoShotTheProjectile == colliderObject2;
+                                if (a.Intersects(b))
+                                {
+                                    if (!selfHit)
+                                    {
+                                        projectile1.OnCollide(colliderObject2);
+                                        colliderObject2.OnCollide(projectile1);
+                                    }
+                                }
+
+                                else if (b.Intersects(a))
+                                {
+                                    if (!selfHit)
+                                    {
+                                        colliderObject2.OnCollide(projectile1);
+                                        projectile1.OnCollide(colliderObject2);
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Rectangle a = colliderObject1.Rectangle;
+                            Rectangle b = colliderObject2.Rectangle;
+                            Vector2 aPos = colliderObject1.Position;
+                            Vector2 bPos = colliderObject2.Position;
+
+                            if (a.Intersects(b))
+                            {
+                                colliderObject1.OnCollide(colliderObject2);
+                                colliderObject2.OnCollide(colliderObject1);
+                            }
+
+                            else if (b.Intersects(a))
+                            {
+                                colliderObject2.OnCollide(colliderObject1);
+                                colliderObject1.OnCollide(colliderObject2);
+
+                            }
+                        }
+
+                    }
+                }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                /*
+                if (obj is ColliderObject)
+                {
+                    ColliderObject colliderObject = (ColliderObject)obj;
+
+               
+                    if (!colliderObject.CollisionDisabled)
+                    {
+                        Projectile projectile = null;
+                        if (colliderObject is Projectile)
+                        {
+                            projectile = (Projectile)colliderObject;
+                        }
+                        // I WILL IMPLEMENT THE QUAD TREE SOON, FOR NOW, I WILL DO THE WORST COLLISION DETECTION ALGORITHM FOR NOW
+                        foreach (var obj2 in objects.OfType<ColliderObject>())
+                        {
+                            ColliderObject obj1 = (ColliderObject)obj;
                             if (obj1 == obj2) { continue; }
 
                             Rectangle a = obj1.Rectangle;
                             Rectangle b = obj2.Rectangle;
                             Vector2 aPos = obj1.Position;
                             Vector2 bPos = obj2.Position;
-
-                            if (a.Intersects(b))
+                            if (projectile != null)
                             {
-                                Rectangle intersect = Rectangle.Intersect(a, b);
-                                aPos.X -= intersect.Width / 2;
-                                aPos.Y -= intersect.Height / 2;
-                                bPos.X += intersect.Width / 2;
-                                bPos.Y += intersect.Height / 2;
-
+                                if (projectile.WhoShotTheProjectile == obj2) continue;
+                                if (a.Intersects(b))
+                                {
+                                    obj1.OnCollide(obj2);
+                                    obj2.OnCollide(obj1);
+                                    objectsToRemove.Add(obj1);
+                                }
                             }
-
-                            else if (b.Intersects(a))
+                            else
                             {
-                                Rectangle intersect = Rectangle.Intersect(b, a);
-                                aPos.X += intersect.Width / 2;
-                                aPos.Y += intersect.Height / 2;
-                                bPos.X -= intersect.Width / 2;
-                                bPos.Y -= intersect.Height / 2;
+                                if (a.Intersects(b))
+                                {
+                                    obj1.OnCollide(obj2);
+                                    Rectangle intersect = Rectangle.Intersect(a, b);
+                                    aPos.X -= intersect.Width / 2;
+                                    aPos.Y -= intersect.Height / 2;
+                                    bPos.X += intersect.Width / 2;
+                                    bPos.Y += intersect.Height / 2;
 
+                                }
+
+                                else if (b.Intersects(a))
+                                {
+                                    obj2.OnCollide(obj1);
+                                    Rectangle intersect = Rectangle.Intersect(b, a);
+                                    aPos.X += intersect.Width / 2;
+                                    aPos.Y += intersect.Height / 2;
+                                    bPos.X -= intersect.Width / 2;
+                                    bPos.Y -= intersect.Height / 2;
+
+                                }
                             }
-
                             obj1.Position = aPos;
                             obj2.Position = bPos;
 
                         }
                     }
                 }
+                */
+
+
 
                 Rectangle rect = obj.Rectangle;
                 Vector2 pos = obj.Position;
@@ -2523,21 +2676,22 @@ namespace MyGame
                 obj.Rectangle = rect;
                 obj.Position = pos;
 
-                if (obj is UIObject)
+                if (obj is not UIObject)
                 {
-                    continue;
-                }
-                if (obj.Texture != null)
-                {
-                    if (
-                            (obj.Position.X + obj.Texture.Width < camera.GetTopLeft().X) ||
-                            (obj.Position.Y + obj.Texture.Height < camera.GetTopLeft().Y) ||
-                            (obj.Position.X > camera.GetTopLeft().X + _graphics.PreferredBackBufferWidth) ||
-                            (obj.Position.Y > camera.GetTopLeft().Y + _graphics.PreferredBackBufferHeight)
-                            )
-                    {
 
-                        objectsToDraw.Remove(obj);
+                
+                    if (obj.Texture != null)
+                    {
+                        if (
+                                (obj.Position.X + obj.Texture.Width < camera.GetTopLeft().X) ||
+                                (obj.Position.Y + obj.Texture.Height < camera.GetTopLeft().Y) ||
+                                (obj.Position.X > camera.GetTopLeft().X + _graphics.PreferredBackBufferWidth) ||
+                                (obj.Position.Y > camera.GetTopLeft().Y + _graphics.PreferredBackBufferHeight)
+                                )
+                        {
+
+                            objectsToDraw.Remove(obj);
+                        }
                     }
                 }
             }
@@ -2545,6 +2699,8 @@ namespace MyGame
 
             cameraPos = player.Position;
             camera.MoveToward(cameraPos + new Vector2(16, 16), (float)gameTime.ElapsedGameTime.TotalMilliseconds, 1.0f);
+            Animation.UpdateAnimations(gameTime);
+
 
 
             foreach (var obj in objectsToRemove.ToList())
@@ -2640,7 +2796,8 @@ namespace MyGame
                 {
                     if (player.currentItemInCursor.Texture != null)
                     {
-                        spriteBatch.Draw(player.currentItemInCursor.Texture, player.currentItemInCursor.Position, Color.White);
+                        Texture2D tex = player.currentItemInCursor.icon != null ? player.currentItemInCursor.icon : player.currentItemInCursor.Texture;
+                        spriteBatch.Draw(tex, player.currentItemInCursor.Position, Color.White);
                     }
                 }
                 time += (float)gameTime.ElapsedGameTime.TotalSeconds;
