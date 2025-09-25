@@ -357,7 +357,12 @@ namespace MyGame
             }
         }
 
+        public void MoveToward(Vector2 target)
+        {
 
+            Center = target;
+        
+        }
 
     }
 
@@ -427,6 +432,12 @@ namespace MyGame
     {
         public float Health { get { return health; } set { health = value; } }
         private float health = 100.0f;
+
+
+
+
+        private float friction = 0.85f;
+        public float Friction { get { return friction; } set { friction = value; } }
         public AI AI { get { return aI; } set { aI = value; } }
         private AI aI; 
         public int Direction
@@ -572,7 +583,6 @@ namespace MyGame
 
 
 
-
         public virtual void OnCollide(ColliderObject otherCollider)
         {
 
@@ -666,7 +676,7 @@ namespace MyGame
 
 
 
-        private GameObject reference;
+        private Character reference;
         private GameObject head;
         private GameObject torso;
         private GameObject rightHand;
@@ -739,8 +749,10 @@ namespace MyGame
             torso.Animation = new Animation(torso);
 
 
-            reference = new GameObject();
-            reference.Position = this.Position;
+            reference = new Character();
+            reference.Position = new Vector2(67, 67);
+            reference.Rectangle = new Rectangle(67, 67, 16, 32);
+            //reference.Position = this.Position;
             reference.Texture = AssetManager.GetTexture("Reference");
             reference.Animation = new Animation(reference);
             Main.AddObject(reference);
@@ -784,30 +796,48 @@ namespace MyGame
 
             UpdateMusic(gameTime);
             if (Input.IsKeyPressed(Keys.F11)) uiHidden = !uiHidden;
+
+            Vector2 velocity = Velocity;
+
+
             if (Input.IsKeyDown(Keys.A))
             {
-                Vector2 velocity = Velocity;
                 velocity.X -= (float)(MoveSpeed * gameTime.ElapsedGameTime.TotalSeconds);
-                velocity.X = Math.Max(-maxSpeed, velocity.X);
-                Velocity = velocity;
                 playerState = PlayerState.Walking;
             }
             else if (Input.IsKeyDown(Keys.D))
             {
-                Vector2 velocity = Velocity;
                 velocity.X += (float)(MoveSpeed * gameTime.ElapsedGameTime.TotalSeconds);
-                velocity.X = Math.Min(maxSpeed, velocity.X);
-                Velocity = velocity;
                 playerState = PlayerState.Walking;
+            }
+           
+            else
+            {
+                velocity.X *= Friction;
+                if (Math.Abs(velocity.X) < 1f)
+                    velocity.X = 0f;
+                playerState = PlayerState.Idle;
+            }
+
+
+
+            if (Input.IsKeyDown(Keys.W))
+            {
+                velocity.Y -= (float)(MoveSpeed * gameTime.ElapsedGameTime.TotalSeconds);
+            }
+            else if (Input.IsKeyDown(Keys.S))
+            {
+                velocity.Y += (float)(MoveSpeed * gameTime.ElapsedGameTime.TotalSeconds);
             }
             else
             {
-                Vector2 velocity = Velocity;
-                velocity.X -= (float)(MoveSpeed * gameTime.ElapsedGameTime.TotalSeconds) * Direction;
-                velocity.X = (Direction == 1) ? Math.Max(0, velocity.X) : Math.Min(0, velocity.X);
-                Velocity = velocity;
-                playerState = PlayerState.Idle;
+                //.Y -= (float)(MoveSpeed * gameTime.ElapsedGameTime.TotalSeconds) * Direction;
+                velocity.Y = 0;
             }
+
+
+
+            /*
             if (Input.IsKeyPressed(Keys.Space))
             {
                 Vector2 velocity = Velocity;
@@ -816,6 +846,11 @@ namespace MyGame
 
             }
 
+            */
+
+            velocity.X = Math.Clamp(velocity.X, -MaxSpeed, MaxSpeed);
+            velocity.Y = Math.Clamp(velocity.Y, -MaxSpeed, MaxSpeed);
+            this.Velocity = velocity;
 
             if (attacking || aiming)
             {
@@ -826,7 +861,6 @@ namespace MyGame
                 if (Velocity.X < 0.0f) Direction = -1;
                 else if (Velocity.X > 0.0f) Direction = 1; ;
             }
-            
 
 
             if (Input.IsKeyPressed(Keys.D1)) { selectedItemIndex = 0; }
@@ -993,7 +1027,7 @@ namespace MyGame
                 {
                     if (Input.IsMouseButtonPressed(Input.MouseButton.Left))
                     {
-                        currentlyHeldItem.OnUse();
+                        currentlyHeldItem.Use(this);
                         if (currentlyHeldItem.useStyle == Item.UseStyle.None)
                         {
 
@@ -1008,7 +1042,7 @@ namespace MyGame
                 {
                     if (Input.IsMouseButtonDown(Input.MouseButton.Left))
                     {
-                        currentlyHeldItem.OnUse();
+                        currentlyHeldItem.Use(this);
                     }
                 }
                 
@@ -1414,7 +1448,7 @@ namespace MyGame
             baseRectangleOffset = new Vector2(4, 0);
 
             this.WhoShotTheProjectile = whoShotTheProjectile;
-        }
+        }   
         public override void Update(GameTime gameTime)
         {
             Vector2 rotatedOffset = Vector2.Transform(baseRectangleOffset, Matrix.CreateRotationZ(Rotation));
@@ -1460,7 +1494,7 @@ namespace MyGame
         }
         public override void OnCollide(ColliderObject otherCollider)
         {
-            if (destroyed) return;
+            if (destroyed || otherCollider == whoShotTheProjectile) return;
             Destroy();
             Main.RemoveObject(this);
             base.OnCollide(otherCollider);
@@ -1498,7 +1532,7 @@ namespace MyGame
             HandPos = new Vector2(2, 11);
             useStyle = UseStyle.Aim;
             holdStyle = HoldStyle.Aim;
-            clickType = ClickType.Press;
+            clickType = ClickType.Hold;
         }
         
     }
@@ -1510,15 +1544,14 @@ namespace MyGame
 
     public abstract class BaseGun : Item
     {
-        public override void OnUse()
+        public override void OnUse(Character user)
         {
 
-            Bullet bullet = new Bullet(Main.player, Position, Rotation);
-
+            Bullet bullet = new Bullet(user, Position, Rotation);
 
 
             Main.AddObject(bullet);
-            base.OnUse();
+            base.OnUse(user);
         }
     }
     public class DroppedItem : ColliderObject
@@ -1546,7 +1579,8 @@ namespace MyGame
 
         public bool consumable = false;
         public int amount = 1;
-
+        public float useTime = 0.1f;
+        private bool canUse = true;
         public Texture2D icon; // must be 16x16
         public bool stackable = true;
         public Vector2 HandPos
@@ -1591,11 +1625,16 @@ namespace MyGame
         public ClickType clickType = ClickType.None;
 
 
-        public virtual void OnUse()
+        public virtual void OnUse(Character user)
         {
             
         }
 
+        public virtual void Use(Character user)
+        {
+            OnUse(user);
+            canUse = false;
+        }
 
         public void Drop()
         {
@@ -1839,6 +1878,8 @@ namespace MyGame
 
     }
 
+
+
     /*
     public class QuadTree<T>
     {
@@ -1970,12 +2011,176 @@ namespace MyGame
 
     public class QuadTree
     {
-        public static QuadTree root;
-        public QuadTree()
+        public static int currentMaxLevel = 0;
+        private int maxObjects = 2;
+        private int maxLevel = byte.MaxValue;
+
+        private int level;
+        private List<ColliderObject> objects;
+        private Rectangle bounds;
+        private QuadTree[] nodes;
+        public Rectangle Bounds { get { return bounds; } }
+        public QuadTree(int level, Rectangle bounds)
         {
+            this.level = level;
+            this.objects = new List<ColliderObject>();
+            this.bounds = bounds;
+            nodes = new QuadTree[4];
+            if (level > currentMaxLevel) currentMaxLevel = level;
         }
 
+        public void Clear()
+        {
+            objects.Clear();
+            for (int i = 0; i < nodes.Length; i++)
+            {
+                if (nodes[i] != null)
+                {
+                    nodes[i].Clear();
+                    nodes[i] = null;
+                }
+            }
+        }
+
+        private void Split()
+        {
+            int subWidth = bounds.Width / 2;
+            int subHeight = bounds.Height / 2;
+            int x = bounds.X;
+            int y = bounds.Y;
+
+            nodes[0] = new QuadTree(level + 1, new Rectangle(x, y, subWidth, subHeight)); 
+            nodes[1] = new QuadTree(level + 1, new Rectangle(x + subWidth, y, subWidth, subHeight));
+            nodes[2] = new QuadTree(level + 1, new Rectangle(x, y + subHeight, subWidth, subHeight));
+            nodes[3] = new QuadTree(level + 1, new Rectangle(x + subWidth, y + subHeight, subWidth, subHeight));
+        }
+
+        private int GetIndex(Rectangle rectangle)
+        {
+            int index = -1;
+
+            float verticalMidpoint = bounds.X + (bounds.Width / 2);
+            float horizontalMidpoint = bounds.Y + (bounds.Height / 2);
+
+            bool topQuadrant = (rectangle.Y < horizontalMidpoint && rectangle.Y + rectangle.Height < horizontalMidpoint);
+            bool bottomQuadrant = (rectangle.Y > horizontalMidpoint);
+
+            if (rectangle.X < verticalMidpoint && rectangle.X + rectangle.Width < verticalMidpoint)
+            {
+                if (topQuadrant)
+                {
+                    index = 0;
+                }
+                else if (bottomQuadrant)
+                {
+                    index = 2;
+                }
+
+            }
+            else if (rectangle.X > verticalMidpoint)
+            {
+                if (topQuadrant)
+                {
+                    index = 1;
+                }
+                else if (bottomQuadrant)
+                {
+                    index = 3;
+                }
+            }
+
+
+
+                return index;
+        }
+
+        public void Insert(ColliderObject colliderObject)//Rectangle rectangle)
+        {
+            Rectangle rectangle = colliderObject.Rectangle;
+            if (nodes[0] != null)
+            {
+                int index = GetIndex(rectangle);
+
+                if (index != -1)
+                {
+                    nodes[index].Insert(colliderObject);
+                    return;
+                }
+                else
+                {
+                    return;
+                }
+            }
+            objects.Add(colliderObject);
+
+            if (objects.Count > maxObjects && level < maxLevel)
+            {
+                if (nodes[0] == null)
+                {
+                    Split();
+                }
+
+                int i = 0;
+                while (i < objects.Count)
+                {
+                    int index = GetIndex(objects[i].Rectangle);
+                    if (index != -1)
+                    {
+                        nodes[index].Insert(objects[i]);
+                        objects.RemoveAt(i);
+                    }
+                    else
+                    {
+                        i++;
+                    }
+                }
+
+            }
+        }
+        public List<ColliderObject> Retrieve(List<ColliderObject> returnObjects, Rectangle rectangle)
+        {
+            int index = GetIndex(rectangle);
+            if (index != -1 && nodes[0] != null)
+            {
+                nodes[index].Retrieve(returnObjects, rectangle);
+            }
+            returnObjects.AddRange(objects);
+            return returnObjects;
+        }
+            
+
+        public void DrawRectangleOutline(SpriteBatch spriteBatch, Color color, Texture2D tex)
+        {
+
+            if (color == default)
+                color = new Color(49, 84, 141) * 0.9f;
+            Rectangle target = bounds;
+
+
+            int outline = 1;
+            byte a = color.A;
+            spriteBatch.Draw(tex, new Rectangle(target.X, target.Y, target.Width, outline), color);
+            spriteBatch.Draw(tex, new Rectangle(target.X, target.Y, outline, target.Height), color);
+            spriteBatch.Draw(tex, new Rectangle(target.X, target.Y + target.Height - outline, target.Width, outline), color);
+            spriteBatch.Draw(tex, new Rectangle(target.X + target.Width - outline, target.Y, outline, target.Height), color);
+
+
+
+            foreach (var node in nodes)
+            {
+                if (node != null)
+                {
+                    node.DrawRectangleOutline(spriteBatch, color, tex);
+                }
+            }
+        }
+
+
+
     }
+
+
+    
     public class World
     {
 
@@ -2346,7 +2551,7 @@ namespace MyGame
 
         private Vector2 cameraPos = Vector2.Zero;
 
-
+        private QuadTree quadTree;
         private static Texture2D pixel;
 
         private Button button;
@@ -2356,6 +2561,7 @@ namespace MyGame
         private GameObject test;
         private static bool shouldExit = false;
         private static GameObject currentObjectInCursor = null;
+
         public Main()
         {
             Console.WriteLine("Start of Main Construction");
@@ -2366,8 +2572,18 @@ namespace MyGame
             IsFixedTimeStep = false;
             //_graphics.IsFullScreen = true;
             //_graphics.HardwareModeSwitch = false;
+
+            /*
             _graphics.PreferredBackBufferWidth = 640;
             _graphics.PreferredBackBufferHeight = 360;
+            */
+            
+            _graphics.PreferredBackBufferWidth = 1920;
+            _graphics.PreferredBackBufferHeight = 1080;
+            
+            _graphics.IsFullScreen = true;
+            _graphics.HardwareModeSwitch = false;
+            
             Window.Title = "Catmeow";
             //_graphics.GraphicsProfile = GraphicsProfile.HiDef;
             _graphics.PreferMultiSampling = true;
@@ -2379,6 +2595,7 @@ namespace MyGame
         protected override void Initialize()
         {
             Console.WriteLine("Start of Initialization");
+            quadTree = new QuadTree(0, new Rectangle(-UInt16.MaxValue, -UInt16.MaxValue, UInt16.MaxValue*2, UInt16.MaxValue*2));
             test = new GameObject();
             player = new Player();
             player.Initialize();
@@ -2449,8 +2666,9 @@ namespace MyGame
                 player.Velocity = Vector2.Zero;
             }
             // TODO: Add your update logic here
-            
+            quadTree.Clear();
             objectsToDraw = objects.ToList();
+            List<ColliderObject> returnObjects = new List<ColliderObject>();
             foreach (var obj in objects.ToList())
             {
                 obj.Update(gameTime);
@@ -2491,7 +2709,46 @@ namespace MyGame
 
                 }
                 // resolve collision
+                
+                if (obj is ColliderObject colliderObject)
+                { 
+                    if (quadTree.Bounds.Contains(colliderObject.Rectangle))
+                    {
+                        quadTree.Insert(colliderObject);
+                    }
+                    else
+                    {
+                        if (colliderObject != player)
+                            RemoveObject(colliderObject);
+                    }
+                    returnObjects.Clear();
+                    returnObjects = quadTree.Retrieve(returnObjects, colliderObject.Rectangle);
+                }
 
+                if (obj is ColliderObject colliderObject1)
+                {
+                    foreach (ColliderObject colliderObject2 in returnObjects)
+                    {
+                        if (colliderObject1 is Projectile projectile1)
+                        {
+                            if (colliderObject2 is Projectile projectile2)
+                            {
+                                continue;
+                            }
+                            if (colliderObject1 == projectile1.WhoShotTheProjectile)
+                            {
+                                continue;
+                            }
+                            if ()
+                        }
+                        if (colliderObject1.Rectangle.Intersects(colliderObject2.Rectangle))
+                        {
+                            colliderObject1.OnCollide(colliderObject2);
+                            colliderObject2.OnCollide(colliderObject1);
+                        }
+                    }
+                }
+                /*
                 if (obj is ColliderObject colliderObject1)
                 {
                     Projectile projectile1 = null;
@@ -2588,7 +2845,7 @@ namespace MyGame
 
 
 
-
+                */
 
 
 
@@ -2695,10 +2952,12 @@ namespace MyGame
                     }
                 }
             }
-
+            if (returnObjects.Count != 0)
+            Console.WriteLine(returnObjects.Count);
 
             cameraPos = player.Position;
-            camera.MoveToward(cameraPos + new Vector2(16, 16), (float)gameTime.ElapsedGameTime.TotalMilliseconds, 1.0f);
+            //camera.MoveToward(cameraPos + new Vector2(16, 16), (float)gameTime.ElapsedGameTime.TotalMilliseconds, 1.0f);
+            camera.MoveToward(cameraPos + new Vector2(16, 16));
             Animation.UpdateAnimations(gameTime);
 
 
@@ -2745,9 +3004,9 @@ namespace MyGame
                 
             }
             
-                //DrawColliders(spriteBatch);
-                DrawCollidersOutline<Projectile>(spriteBatch);
-
+                DrawColliders(spriteBatch);
+                //DrawCollidersOutline<Projectile>(spriteBatch);
+            quadTree.DrawRectangleOutline(spriteBatch, Color.Red, pixel);
 
                 spriteBatch.End();
 
@@ -2788,10 +3047,9 @@ namespace MyGame
                     );
                     */
                 }
-                
+
                 //DrawCollidersOutline<UIObject>(spriteBatch);
                 //DrawColliders<UIObject>(spriteBatch);
-
                 if (player.currentItemInCursor != null)
                 {
                     if (player.currentItemInCursor.Texture != null)
@@ -2809,6 +3067,7 @@ namespace MyGame
                 }
 
                 spriteBatch.DrawString(spriteFont, fps.ToString(), new Vector2(0, _graphics.PreferredBackBufferHeight - 16.0f), Color.Magenta);
+                spriteBatch.DrawString(spriteFont, QuadTree.currentMaxLevel.ToString(), new Vector2(0, _graphics.PreferredBackBufferHeight - 32.0f), Color.Magenta);
                 spriteBatch.End();
 
 
@@ -2903,29 +3162,26 @@ namespace MyGame
 
 
         private void DrawOutline(SpriteBatch spriteBatch, Rectangle target, Color color)
-        {               
+        {
             Texture2D tex = pixel;
 
             if (color == default)
                 color = new Color(49, 84, 141) * 0.9f;
 
-            var sourceCorner = new Rectangle(0, 0, 6, 6);
-            var sourceEdge = new Rectangle(6, 0, 4, 6);
-            var sourceCenter = new Rectangle(6, 6, 4, 4);
 
 
             int outline = 2;    
             byte a = color.A;
             Color cornerColor = new Color((byte)(color.R * 0.5), (byte)(color.G * 0.5), (byte)(color.B * 0.5), (byte)255);
             spriteBatch.Draw(tex, new Rectangle(target.X + outline, target.Y, target.Width - outline*2, outline), color);
-            spriteBatch.Draw(tex, new Rectangle(target.X, target.Y - outline + target.Height, target.Height - outline*2, outline), sourceEdge, color, -(float)Math.PI * 0.5f, Vector2.Zero, 0, 0);
-            spriteBatch.Draw(tex, new Rectangle(target.X - outline + target.Width, target.Y + target.Height, target.Width - outline * 2, outline), sourceEdge, color, (float)Math.PI, Vector2.Zero, 0, 0);
-            spriteBatch.Draw(tex, new Rectangle(target.X + target.Width, target.Y + outline, target.Height - outline * 2, outline), sourceEdge, color, (float)Math.PI * 0.5f, Vector2.Zero, 0, 0);
+            spriteBatch.Draw(tex, new Rectangle(target.X, target.Y - outline + target.Height, target.Height - outline*2, outline), color);
+            spriteBatch.Draw(tex, new Rectangle(target.X - outline + target.Width, target.Y + target.Height, target.Width - outline * 2, outline), color);
+            spriteBatch.Draw(tex, new Rectangle(target.X + target.Width, target.Y + outline, target.Height - outline * 2, outline), color);
 
-            spriteBatch.Draw(tex, new Rectangle(target.X, target.Y, outline, outline), sourceCorner, cornerColor, 0, Vector2.Zero, 0, 0);
-            spriteBatch.Draw(tex, new Rectangle(target.X + target.Width, target.Y, outline, outline), sourceCorner, cornerColor, (float)Math.PI * 0.5f, Vector2.Zero, 0, 0);
-            spriteBatch.Draw(tex, new Rectangle(target.X + target.Width, target.Y + target.Height, outline, outline), sourceCorner, cornerColor, (float)Math.PI, Vector2.Zero, 0, 0);
-            spriteBatch.Draw(tex, new Rectangle(target.X, target.Y + target.Height, outline, outline), sourceCorner, cornerColor, (float)Math.PI * 1.5f, Vector2.Zero, 0, 0);
+            spriteBatch.Draw(tex, new Rectangle(target.X, target.Y, outline, outline), cornerColor);
+            spriteBatch.Draw(tex, new Rectangle(target.X + target.Width, target.Y, outline, outline), cornerColor);
+            spriteBatch.Draw(tex, new Rectangle(target.X + target.Width, target.Y + target.Height, outline, outline), cornerColor);
+            spriteBatch.Draw(tex, new Rectangle(target.X, target.Y + target.Height, outline, outline), cornerColor);
             /*
             int outline = 4;
             spriteBatch.Draw(pixel, new Rectangle(target.Location.X + (outline / 2), target.Location.Y, target.Width + outline, outline), color);
