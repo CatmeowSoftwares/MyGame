@@ -406,14 +406,52 @@ namespace MyGame
         public Vector2 Size { get { return new Vector2(width, height); } }
         private int width = 8;
         private int height = 8;
-
+        private int x;
+        private int y;
+        public Texture2D Texture {  get { return texture;  } set { texture = value; } }
+        private Texture2D texture;
         public bool Solid { get { return solid; } set { solid = value; } }
         private bool solid = false;
 
+        public Tile(int id)
+        {
 
-        enum TileTexture
+        }
+
+        public Tile(TileType tileType, int x, int y)
+        {
+            this.tileType = tileType;
+            this.x = x;
+            this.y = y;
+            switch (tileType)
+            {
+                case TileType.NONE: 
+                    break;
+                case TileType.GRASS:
+                    texture = AssetManager.GetTexture("GrassBlock");
+                    solid = true;
+                    break;
+                case TileType.DIRT:
+                    texture = AssetManager.GetTexture("DirtBlock");
+                    solid = true;
+                    break;
+                case TileType.STONE:
+                    texture = AssetManager.GetTexture("StoneBlock");
+                    solid = true;
+                    break;
+                default:
+                    break;
+            }
+            
+        }
+        public TileType Type { get { return tileType; } set { tileType = value; } }
+        private TileType tileType = TileType.NONE;
+        public enum TileType
         {
             NONE = 0,
+            GRASS = 1,
+            DIRT = 2,
+            STONE = 3,
 
         }
        
@@ -433,7 +471,8 @@ namespace MyGame
         public float Health { get { return health; } set { health = value; } }
         private float health = 100.0f;
 
-
+        public float MaxHealth { get { return maxHealth; } set { maxHealth = value; } }
+        private float maxHealth = 100.0f;
 
 
         private float friction = 0.85f;
@@ -1444,8 +1483,8 @@ namespace MyGame
             this.Origin = GetSize() /2.0f;
             this.Velocity = Vector2.Transform(new Vector2(1000, 0), Matrix.CreateRotationZ(rotation));
             this.Rectangle = new Rectangle(0, 0, 2, 2);
-            RectangleOffset = new Vector2(4, 0);
-            baseRectangleOffset = new Vector2(4, 0);
+            //RectangleOffset = new Vector2(4, 0);
+            baseRectangleOffset = new Vector2(GetSize().X / 2.0f , 0f);
 
             this.WhoShotTheProjectile = whoShotTheProjectile;
         }   
@@ -2184,7 +2223,7 @@ namespace MyGame
     public class World
     {
 
-        public static Tile[,] tiles = new Tile[69420, 69420]; 
+        public static Tile[,] tiles = new Tile[2048, 2048]; 
 
 
         public static void CreateWorld()
@@ -2193,7 +2232,7 @@ namespace MyGame
             {
                 for (int y = 0; y < World.tiles.GetLength(1); ++y)
                 {
-                    
+                    tiles[x, y] = new Tile((Tile.TileType)1, x, y);
                 }
             }
         }
@@ -2202,7 +2241,7 @@ namespace MyGame
 
     public class Collision
     {
-        public static bool CheckTileCollision(Object obj)
+        public static bool CheckTileCollision(ColliderObject obj)
         {
             Vector2 position = obj.Position;
 
@@ -2223,6 +2262,22 @@ namespace MyGame
                     Vector2 vector2;
                     vector2.X = (float)(x * 8.0);
                     vector2.Y = (float)(y * 8.0);
+                    if (TopTile(tile))
+                    {
+
+                    }
+                    else if (BottomTile(tile))
+                    {
+
+                    }
+                    else if (LeftTile(tile))
+                    {
+                        
+                    }
+                    else if (RightTile(tile))
+                    {
+
+                    }
                     if (position.X + width > vector2.X && 
                         position.X < vector2.X + 8.0 && 
                         position.Y + height > vector2.Y && 
@@ -2237,7 +2292,101 @@ namespace MyGame
             }
             return false;
         }
-            
+        public static bool CheckTileCollision(PhysicsObject obj)
+        {
+            Vector2 position = obj.Position;
+
+            int width = obj.Rectangle.Width;
+            int height = obj.Rectangle.Height;
+            int TL = (int)(position.X / 8.0) - 1;
+            int TR = (int)((position.X + width) / 8.0) + 2;
+            int BL = (int)(position.Y / 8.0) - 1;
+            int BR = (int)(position.Y + height / 8.0) + 2;
+
+
+            for (int x = TL; x < TR; ++x)
+            {
+                for (int y = BL; y < BR; ++y)
+                {
+                    Tile tile = World.tiles[x, y];
+                    if (tile == null) { continue; }
+                    Vector2 vector2;
+                    vector2.X = (float)(x * 8.0);
+                    vector2.Y = (float)(y * 8.0);
+                    if (TopTile(tile))
+                    {
+
+                    }
+                    else if (BottomTile(tile))
+                    {
+
+                    }
+                    else if (LeftTile(tile))
+                    {
+                        obj.OnFloor = true;
+                        Vector2 velocity = obj.Velocity;
+                        velocity.X = 0.0f;
+                        obj.Velocity = velocity;
+                    }
+                    else if (RightTile(tile))
+                    {
+
+                    }
+                    if (position.X + width > vector2.X &&
+                        position.X < vector2.X + 8.0 &&
+                        position.Y + height > vector2.Y &&
+                        position.Y < vector2.Y + 8.0)
+                    {
+                        if (tile.Solid)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        public static bool TopTile(Tile tile)
+        {
+            return false;
+        }
+        public static bool BottomTile(Tile tile)
+        {
+            if ()
+            {
+                return true;
+            }
+            return false;
+        }
+        public static bool LeftTile(Tile tile)
+        {
+            return false;
+        }
+        public static bool RightTile(Tile tile)
+        {
+            return false;
+        }
+
+
+
+
+        public static bool TopLeftTile(Tile tile)
+        {
+            return false;
+        }
+        public static bool TopRightTile(Tile tile)
+        {
+            return false;
+        }
+        public static bool BottomLeftTile(Tile tile)
+        {
+            return false;
+        }
+        public static bool BottomRightTile(Tile tile)
+        {
+            return false;
+        }
     }
     public class GameObject : Object
     {
@@ -2423,7 +2572,7 @@ namespace MyGame
     }
     public class Main : Game
     {
-        private static GraphicsDeviceManager _graphics;
+        private static GraphicsDeviceManager graphics;
         private static SpriteBatch spriteBatch;
 
         private static List<Object> objects = new List<Object>();
@@ -2454,30 +2603,30 @@ namespace MyGame
         public Main()
         {
             Console.WriteLine("Start of Main Construction");
-            _graphics = new GraphicsDeviceManager(this);
+            graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
-            _graphics.SynchronizeWithVerticalRetrace = false;
+            graphics.SynchronizeWithVerticalRetrace = false;
             IsFixedTimeStep = false;
-            //_graphics.IsFullScreen = true;
-            //_graphics.HardwareModeSwitch = false;
+            //graphics.IsFullScreen = true;
+            //graphics.HardwareModeSwitch = false;
 
             /*
-            _graphics.PreferredBackBufferWidth = 640;
-            _graphics.PreferredBackBufferHeight = 360;
+            graphics.PreferredBackBufferWidth = 640;
+            graphics.PreferredBackBufferHeight = 360;
             */
             
-            _graphics.PreferredBackBufferWidth = 1920;
-            _graphics.PreferredBackBufferHeight = 1080;
+            graphics.PreferredBackBufferWidth = 1920;
+            graphics.PreferredBackBufferHeight = 1080;
             
-            _graphics.IsFullScreen = true;
-            _graphics.HardwareModeSwitch = false;
+            graphics.IsFullScreen = true;
+            graphics.HardwareModeSwitch = false;
             
             Window.Title = "Catmeow";
-            //_graphics.GraphicsProfile = GraphicsProfile.HiDef;
-            _graphics.PreferMultiSampling = true;
+            //graphics.GraphicsProfile = GraphicsProfile.HiDef;
+            graphics.PreferMultiSampling = true;
 
-            _graphics.ApplyChanges();
+            graphics.ApplyChanges();
             Console.WriteLine("End of Main Construction");
         }
 
@@ -2494,9 +2643,9 @@ namespace MyGame
             pixel = new Texture2D(GraphicsDevice, 1, 1);
             pixel.SetData(new Color[] { Color.White });
             progressBar = new ProgressBar(CreateRectangleTexture(1, 1));
-            progressBar.Position = new Vector2(0, _graphics.PreferredBackBufferHeight - 8.0f);
+            progressBar.Position = new Vector2(0, graphics.PreferredBackBufferHeight - 8.0f);
             // TODO: Add your initialization logic here
-            camera = new Camera(_graphics);
+            camera = new Camera(graphics);
             Console.WriteLine("End of Initialization");
             base.Initialize();
         }
@@ -2520,6 +2669,7 @@ namespace MyGame
             catch (Exception e) { Console.WriteLine(e); }
             player.LayerDepth = 0.01f;
             button.Texture = CreateRectangleTexture(button.Width, button.Height);
+            World.CreateWorld();
             objects.Add(player);
             objects.Add(button);
             objects.Add(progressBar);
@@ -2611,7 +2761,7 @@ namespace MyGame
                             RemoveObject(colliderObject);
                     }
                     returnObjects.Clear();
-                    returnObjects = quadTree.Retrieve(returnObjects, colliderObject.Rectangle);
+                    quadTree.Retrieve(returnObjects, colliderObject.Rectangle);
                 }
 
                 if (obj is ColliderObject colliderObject1)
@@ -2831,8 +2981,8 @@ namespace MyGame
                         if (
                                 (obj.Position.X + obj.Texture.Width < camera.GetTopLeft().X) ||
                                 (obj.Position.Y + obj.Texture.Height < camera.GetTopLeft().Y) ||
-                                (obj.Position.X > camera.GetTopLeft().X + _graphics.PreferredBackBufferWidth) ||
-                                (obj.Position.Y > camera.GetTopLeft().Y + _graphics.PreferredBackBufferHeight)
+                                (obj.Position.X > camera.GetTopLeft().X + graphics.PreferredBackBufferWidth) ||
+                                (obj.Position.Y > camera.GetTopLeft().Y + graphics.PreferredBackBufferHeight)
                                 )
                         {
 
@@ -2869,9 +3019,32 @@ namespace MyGame
         {
             GraphicsDevice.Clear(Color.Black);
             // TODO: Add your drawing code here
-            Matrix transform = Matrix.CreateTranslation(-camera.GetTopLeft().X, -camera.GetTopLeft().Y, 0);
+            Matrix transform = Matrix.CreateTranslation(-camera.GetTopLeft().X, -camera.GetTopLeft().Y, 0);//* Matrix.CreateScale(0.5f);
             spriteBatch.Begin(SpriteSortMode.Deferred, samplerState: SamplerState.PointWrap, transformMatrix: transform);
-
+            int startX = Math.Max(0, (int)camera.GetTopLeft().X / 8);
+            int startY = Math.Max(0, (int)camera.GetTopLeft().Y / 8);
+            int endX = Math.Min(World.tiles.GetLength(0), (int)(camera.GetTopLeft().X + graphics.PreferredBackBufferWidth) / 8 + 1);
+            int endY = Math.Min(World.tiles.GetLength(1), (int)(camera.GetTopLeft().Y + graphics.PreferredBackBufferHeight) / 8 + 1);
+            for (int x = startX; x < endX; ++x)
+            {
+                for (int y = startY; y < endY; ++y)
+                {
+                    Tile tile = World.tiles[x, y];
+                    if (tile == null) { continue; }
+                    if (tile.Texture == null) { continue; }
+                    Vector2 pos = new Vector2(x * 8.0f, y * 8.0f);
+                    /*if (
+                        (pos.X + 8.0f < camera.GetTopLeft().X) ||
+                        (pos.Y + 8.0f < camera.GetTopLeft().Y) ||
+                        (pos.X > camera.GetTopLeft().X + graphics.PreferredBackBufferWidth) ||
+                        (pos.Y > camera.GetTopLeft().Y + graphics.PreferredBackBufferHeight)
+                        )
+                    {
+                        continue;
+                    }*/
+                    spriteBatch.Draw(tile.Texture, pos, Color.White);
+                }
+            }
 
             foreach (GameObject obj in objectsToDraw.OfType<GameObject>())
             {
@@ -2895,7 +3068,7 @@ namespace MyGame
             
                 DrawColliders(spriteBatch);
                 //DrawCollidersOutline<Projectile>(spriteBatch);
-            quadTree.DrawRectangleOutline(spriteBatch, Color.Red, pixel);
+            //quadTree.DrawRectangleOutline(spriteBatch, Color.Red, pixel);
 
                 spriteBatch.End();
 
@@ -2955,8 +3128,8 @@ namespace MyGame
                     time = 0.0f;
                 }
 
-                spriteBatch.DrawString(spriteFont, fps.ToString(), new Vector2(0, _graphics.PreferredBackBufferHeight - 16.0f), Color.Magenta);
-                spriteBatch.DrawString(spriteFont, QuadTree.currentMaxLevel.ToString(), new Vector2(0, _graphics.PreferredBackBufferHeight - 32.0f), Color.Magenta);
+                spriteBatch.DrawString(spriteFont, fps.ToString(), new Vector2(0, graphics.PreferredBackBufferHeight - 16.0f), Color.Magenta);
+                spriteBatch.DrawString(spriteFont, QuadTree.currentMaxLevel.ToString(), new Vector2(0, graphics.PreferredBackBufferHeight - 32.0f), Color.Magenta);
                 spriteBatch.End();
 
 
@@ -3015,7 +3188,7 @@ namespace MyGame
                 var collider = obj.Rectangle;
                 if (collider.Size == Point.Zero || obj.Hidden) { continue; }
 
-                spriteBatch.Draw(pixel, collider, new Color(255, 0, 0, 64));
+                spriteBatch.Draw(pixel, collider, new Color(255, 0, 0, 67));
             }
         }
         private void DrawColliders<T>(SpriteBatch spriteBatch)
