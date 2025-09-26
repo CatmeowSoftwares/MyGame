@@ -336,7 +336,7 @@ namespace MyGame
 
         public Camera(Rectangle rectangle, Vector2 center)
         {
-            this.Center = center.ToPoint().ToVector2();
+            this.Center = center;
             _quarterScreen = new Vector2(rectangle.Width / 2, rectangle.Height / 2);
         }
 
@@ -353,7 +353,7 @@ namespace MyGame
 
             if ((target - Center).Length() < movePercentage || movePercentage != 1.0f)  
             {
-                Center = target.ToPoint().ToVector2();
+                Center = target;
             }
         }
 
@@ -383,6 +383,8 @@ namespace MyGame
         public bool AffectedByGravity { get { return affectedByGravity; } set { affectedByGravity = value; } }
         private bool affectedByGravity = true;
 
+        public float GravityScale { get { return gravityScale; } set { gravityScale = value; } }
+        private float gravityScale = 1.0f;
 
 
         public bool OnFloor { get { return onFloor; } set { onFloor = value; } }
@@ -394,7 +396,18 @@ namespace MyGame
         public float TerminalVelocity {  get { return terminalVelocity; } set { terminalVelocity = value; } }
         private float terminalVelocity = 420.0f;
 
+        public bool CanCollideWithTiles
+        {
+            get { return canCollideWithTiles; }
+            set { canCollideWithTiles = value; }
+        }
+        private bool canCollideWithTiles = true;
 
+        public virtual void OnTileCollide(Tile tile)
+        {
+            if (tile != null)
+            tile.color = Color.Red;
+        }
 
 
 
@@ -413,6 +426,7 @@ namespace MyGame
         private int y;
         public Texture2D Texture {  get { return texture;  } set { texture = value; } }
         private Texture2D texture;
+        public Color color = Color.White;
         public bool Solid { get { return solid; } set { solid = value; } }
         private bool solid = false;
 
@@ -457,17 +471,376 @@ namespace MyGame
             STONE = 3,
 
         }
-       
+
     }
 
- 
+
+
+
+
+
+
+    public class Enemy1 : Enemy
+    {
+        // AI arrays (like Terrarian ai[] / localAI[])
+        public float[] ai = new float[4];       // ai[0] = state index; ai[2] = state timer (frames-like)
+        public float[] newAI = new float[4];    // spare flags (used for "tired" etc.)
+        public float rotation = 0f;
+        public int spriteDirection = 1;
+
+        // visual / behaviour helpers
+        private float afterimageTimer = 0f; // used by certain states
+        private float lastBlobSpawn = 0f;
+
+        public Enemy1(Texture2D texture, Vector2 position, float health = 255.0f) : base(health)
+        {
+            this.AffectedByGravity = false;
+            this.Health = health;
+            this.MaxHealth = health;
+            this.Texture = texture;
+            this.Position = position;
+            this.Rectangle = new Rectangle(position.ToPoint(), new Point(150 / 10, 100 / 10)); // scaled down approximated size
+            // initialize ai similarly to OldDuke defaults
+            ai[0] = 0f;
+            ai[1] = 0f;
+            ai[2] = 0f;
+            ai[3] = 0f;
+        }
+
+        public override void Update(GameTime gameTime)
+        {
+            // call the OldDuke AI routine (faithful state machine recreation)
+            OldDukeAI.VanillaOldDukeAI(this, gameTime);
+
+            // update rotation & sprite direction to mirror visual intent
+            if (Velocity.X > 0.01f) spriteDirection = 1;
+            else if (Velocity.X < -0.01f) spriteDirection = -1;
+
+            if (Velocity.LengthSquared() > 0.001f)
+            {
+                rotation = (float)Math.Atan2(Velocity.Y, Velocity.X);
+            }
+
+            base.Update(gameTime);
+        }
+
+        // keep your damage text behavior
+        public override void Damage(float value)
+        {
+            CombatText combatText = new CombatText(this, (int)value);
+            base.Damage(value);
+        }
+    }
+
+    // --- The OldDuke AI translated into your framework ---
+    public static class OldDukeAI
+    {
+        // Constants to make the AI easier to read (mapping to original ai values)
+        private const int STATE_IDLECYCLE_A = 0; // 0 / 5 / 10 / 12 family (patrol / wind-up)
+        private const int STATE_WINDUP = 1;      // short wind-up (a lunge / attack prep)
+        private const int STATE_VOMIT = 2;       // vomit acid volley
+        private const int STATE_AFTERIMAGE = 3;  // dash/afterimage movement
+        private const int STATE_CHARGEUP = 4;    // big charged attack (radial vomit)
+        // original used sequences repeating with offset+5 etc; we cycle between them
+
+        // call this each Update
+        public static void VanillaOldDukeAI(Enemy1 npc, GameTime gameTime)
+        {
+            // guard: need a player reference
+            Player player = Main.player; // your project appears to store a global player reference like this
+            if (player == null) return;
+
+            float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            // emulate original frame-counting (original used integer frames). Use 60fps-equivalent counter:
+            npc.ai[2] += dt * 60f; // ai[2] acts like frame timer
+
+            int state = (int)npc.ai[0];
+
+            // helper: distance and direction to player
+            Vector2 toPlayer = (player.Position - npc.Position);
+            float distanceToPlayer = toPlayer.Length();
+            Vector2 dirToPlayer = distanceToPlayer > 0.01f ? Vector2.Normalize(toPlayer) : Vector2.UnitX;
+
+            // base move damp
+            float baseMoveSpeed = 80f;
+
+            // per-state behavior
+            switch (state)
+            {
+                //
+                // STATE 0 family: roaming/idle with mild pursuit; after some time, transition to windup (1)
+                //
+                case STATE_IDLECYCLE_A:
+                    {
+                        // slow approach / idle
+                        if (distanceToPlayer > 10f)
+                        {
+                            // move horizontally toward player, keep vertical drift small
+                            float vx = MathHelper.Lerp(npc.Velocity.X, dirToPlayer.X * baseMoveSpeed, 0.02f);
+                            npc.Velocity = new Vector2(vx, npc.Velocity.Y);
+                        }
+                        else
+                        {
+                            npc.Velocity *= 0.9f;
+                        }
+
+                        // occasionally pick next state
+                        if (npc.ai[2] > 180f) // ~3 seconds
+                        {
+                            npc.ai[2] = 0f;
+                            npc.ai[0] = STATE_WINDUP;
+                        }
+                    }
+                    break;
+
+                //
+                // STATE 1 family: wind-up and lunge (short telegraphed charge)
+                //
+                case STATE_WINDUP:
+                    {
+                        // telegraph: pause for a short time then lunge
+                        if (npc.ai[2] < 20f)
+                        {
+                            // huff: stationary, slight breathing
+                            npc.Velocity *= 0.8f;
+                        }
+                        else if (npc.ai[2] < 40f)
+                        {
+                            // sprint toward the player (fast burst)
+                            npc.Velocity = dirToPlayer * (baseMoveSpeed * 8f) * dt;
+                        }
+                        else
+                        {
+                            // return to idle but often go to vomit (acid volley)
+                            npc.ai[2] = 0f;
+                            npc.ai[0] = STATE_VOMIT;
+                        }
+                    }
+                    break;
+
+                //
+                // STATE 2 family: vomit acid volley (this replaces Terraria projectile with AcidBlob)
+                //
+                case STATE_VOMIT:
+                    {
+                        // play a sequence of small volleys aimed toward the player, and a slight backward recoil
+                        float volleyDuration = 120f; // frames
+                        // spawn timing: every ~12 frames
+                        if (npc.ai[2] > 8f && npc.ai[2] - dt * 60f <= 8f) { /* first tick */ }
+                        // spawn bursts
+                        if (npc.ai[2] > 0f && npc.ai[2] <= volleyDuration)
+                        {
+                            // spawn in intervals
+                            if (npc.ai[3] <= 0f) npc.ai[3] = 0f;
+                            npc.ai[3] += dt * 60f;
+                            if (npc.ai[3] >= 12f)
+                            {
+                                npc.ai[3] = 0f;
+                                // spawn an AcidBlob that arcs / travels toward the player with inaccuracy
+                                Vector2 spawnPos = npc.Position + new Vector2(0f, -10f);
+                                // apply small spread
+                                float spread = MathHelper.ToRadians((float)Main.rand.Next(-12, 12));
+                                float angle = (float)Math.Atan2(dirToPlayer.Y, dirToPlayer.X) + spread;
+                                Vector2 vel = Vector2.Transform(new Vector2(600f, 0f), Matrix.CreateRotationZ(angle));
+                                var blob = new AcidBlob(npc, spawnPos, vel);
+                                Main.AddObject(blob);
+                                // no sound (null)
+                            }
+                        }
+
+                        // after volley ends, decide next stage: dash/afterimage or charge
+                        if (npc.ai[2] > volleyDuration)
+                        {
+                            npc.ai[2] = 0f;
+                            // 50% chance to go to afterimage dash or to charge attack
+                            if (Main.rand.NextDouble() < 0.5) npc.ai[0] = STATE_AFTERIMAGE;
+                            else npc.ai[0] = STATE_CHARGEUP;
+                            npc.ai[3] = 0f;
+                        }
+                    }
+                    break;
+
+                //
+                // STATE 3 family: dash/afterimage (fast multi-dash toward player)
+                //
+                case STATE_AFTERIMAGE:
+                    {
+                        // do a sequence of quick dashes with short invulnerability-style movement
+                        // use ai[3] as dash step counter
+                        float dashTotal = 90f;
+                        float dashStepDuration = 18f;
+                        if (npc.ai[2] % dashStepDuration < 1f && npc.ai[3] <= 0f)
+                        {
+                            // initiate a dash
+                            npc.ai[3] = dashStepDuration; // lock step
+                            Vector2 dashVel = dirToPlayer * 2200f * dt;
+                            npc.Velocity = dashVel;
+                            // create 2-3 short-lived AcidBlobs spawned perpendicular as 'afterimage spit' (optional)
+                            for (int i = -1; i <= 1; ++i)
+                            {
+                                float spread = MathHelper.ToRadians(i * 18f);
+                                Vector2 v = Vector2.Transform(dirToPlayer * 420f, Matrix.CreateRotationZ(spread));
+                                var b = new AcidBlob(npc, npc.Position + dirToPlayer * 8f, v);
+                                Main.AddObject(b);
+                            }
+                        }
+
+                        if (npc.ai[3] > 0f) npc.ai[3] -= dt * 60f;
+                        // slow down gradually
+                        npc.Velocity *= 0.96f;
+
+                        if (npc.ai[2] > dashTotal)
+                        {
+                            npc.ai[2] = 0f;
+                            npc.ai[0] = STATE_IDLECYCLE_A; // go back to idle/patrol
+                        }
+                    }
+                    break;
+
+                //
+                // STATE 4 family: charged radial vomit (big attack)
+                //
+                case STATE_CHARGEUP:
+                    {
+                        // charge up for a big radial burst around the boss
+                        float chargeTime = 80f;
+                        if (npc.ai[2] < chargeTime)
+                        {
+                            // slow and spin slightly
+                            npc.Velocity *= 0.9f;
+                            npc.rotation += 0.02f;
+                        }
+                        else
+                        {
+                            // on release spawn a radial burst of AcidBlobs (replace original projectile barrage)
+                            int shards = 10;
+                            for (int i = 0; i < shards; ++i)
+                            {
+                                float randomFloat = (float)(Main.rand.Next(-1, 1)) / 10;
+                                float ang = MathHelper.TwoPi * i / (float)shards + randomFloat;
+                                Vector2 vel = new Vector2((float)Math.Cos(ang), (float)Math.Sin(ang)) * 420f;
+                                var b = new AcidBlob(npc, npc.Position, vel);
+                                Main.AddObject(b);
+                            }
+                            // no sound
+                            npc.ai[2] = 0f;
+                            npc.ai[0] = STATE_IDLECYCLE_A;
+                        }
+                    }
+                    break;
+
+                default:
+                    {
+                        // if unknown state, reset
+                        npc.ai[0] = 0f;
+                        npc.ai[2] = 0f;
+                    }
+                    break;
+            }
+
+            // apply gravity-like behaviour if desired (OldDuke was flying; keep no gravity)
+            // Clamp speeds so boss doesn't rocket off-screen
+            if (npc.Velocity.Length() > 1200f)
+            {
+                npc.Velocity = Vector2.Normalize(npc.Velocity) * 1200f;
+            }
+        }
+    }
+
+    // --- AcidBlob: replaces the Calamity projectile the boss would spawn ---
+    // Reuses your Projectile base so collision uses your existing system,
+    // but it's a visually different "vomit blob" with a short arcing life.
+    public class AcidBlob : Projectile
+    {
+        public AcidBlob(ColliderObject whoShot, Vector2 position, Vector2 velocity) : base()
+        {
+            this.WhoShotTheProjectile = whoShot;
+            this.AffectedByGravity = false;
+            this.Position = position;
+            this.Velocity = velocity;
+            this.Rectangle = new Rectangle(0, 0, 8, 8);
+            this.Origin = new Vector2(4f, 4f);
+            this.LifeTime = 100.0f; // 3 seconds
+            // If you have an acid texture, use it; otherwise leave null-safe (wrap in try)
+            try
+            {
+                if (AssetManager.LoadedTextures)
+                {
+                    this.Texture = AssetManager.GetTexture("Reference");
+                }
+            }
+            catch
+            {
+                // texture optional
+            }
+        }
+
+        public override void Update(GameTime gameTime)
+        {
+            // simple drag / slight gravity so blobs arc
+            float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            Velocity += new Vector2(0f, 300f) * dt * 0.25f; // light gravity
+            Velocity *= 0.995f; // small drag
+
+            // rotate to match travel direction for nicer visuals
+            this.Rotation = (float)Math.Atan2(Velocity.Y, Velocity.X);
+
+            base.Update(gameTime);
+        }
+
+        public override void OnCollide(ColliderObject otherCollider)
+        {
+            // Deal small acid damage if hits a character (not the shooter)
+            if (otherCollider != this.WhoShotTheProjectile && otherCollider is Character c)
+            {
+                c.Damage(120f); // tune to taste
+            }
+
+            // create a small linger effect: spawn a short-lived "Acid Puddle" collider?
+            // skip for now; simply destroy the blob
+            Destroy();
+            base.OnCollide(otherCollider);
+        }
+    }
+
+
+
+
+
+
+
+
+
     public class AI
     {
 
     }
+
+
+    /*
+    public class Enemy1 : Enemy
+    {
+        public Enemy1(Texture2D texture, Vector2 position, float health = UInt16.MaxValue) : base(health)
+        {
+            this.Health = health;
+            this.MaxHealth = health;
+            this.Texture = texture;
+            this.Position = position;
+            this.Rectangle = new Rectangle(position.ToPoint(), new Point(16, 32));
+        }
+        public override void Damage(float value)
+        {
+            CombatText combatText = new CombatText(this, (int)value);
+            base.Damage(value);
+        }
+    }
+    */
     public class Enemy : Character
     {
-
+        public Enemy(float health) : base(health)
+        {
+            this.MaxHealth = health;
+        }
     }
     public class Character : PhysicsObject
     {
@@ -477,9 +850,12 @@ namespace MyGame
         public float MaxHealth { get { return maxHealth; } set { maxHealth = value; } }
         private float maxHealth = 100.0f;
 
-
+        public bool Invisible { get { return invisible; } set { invisible = value; } }
+        private bool invisible = false;
+        protected float invisbleOpacity = 0.1f;
         private float friction = 0.85f;
         public float Friction { get { return friction; } set { friction = value; } }
+        private ProgressBar progressBar;
         public AI AI { get { return aI; } set { aI = value; } }
         private AI aI; 
         public int Direction
@@ -491,10 +867,35 @@ namespace MyGame
             }
         }
         private int direction = 1;
+
+        public Character(float health)
+        {
+            this.MaxHealth = health;
+            progressBar = new ProgressBar(Main.pixel, max: health);
+        }
+        public Character()
+        {
+            this.MaxHealth = Health;
+            progressBar = new ProgressBar(Main.pixel, max: MaxHealth);
+
+        }
+        public override void Update(GameTime gameTime)
+        {
+            progressBar.Position = Position;
+            progressBar.Value = health;
+            progressBar.Update(gameTime);
+            base.Update(gameTime);
+        }
+        public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
+        {
+            spriteBatch.Draw(progressBar.Texture, progressBar.Position, progressBar.SourceRectangle, progressBar.Color, progressBar.Rotation, progressBar.Origin, progressBar.Scale, progressBar.Effects, progressBar.LayerDepth);
+            base.Draw(spriteBatch, gameTime);
+        }
         public virtual void Damage(float value)
         {
             if (value < 0) return;
             health -= value;
+            CombatText combatText = new CombatText(this, (int)value);
             if (health <= 0) Destroy();
         }
         public void Die()
@@ -757,6 +1158,8 @@ namespace MyGame
         }
         public void LoadContent(ContentManager content)
         {
+            this.Health = float.MaxValue;
+            this.MaxHealth = Health;
             isMale = false;
             if (isMale)
             {
@@ -885,7 +1288,7 @@ namespace MyGame
 
 
             
-            if (Input.IsKeyPressed(Keys.Space))
+            if (Input.IsKeyPressed(Keys.Space) && OnFloor)
             {
                 velocity.Y = JumpPower;
 
@@ -1209,7 +1612,7 @@ namespace MyGame
             }
             lastPlayerState = playerState;
             //Console.WriteLine(playerState);
-    
+            base.Update(gameTime);
         }
 
         public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
@@ -1218,7 +1621,7 @@ namespace MyGame
             {
                 spriteBatch.Draw(
                         currentlyHeldItem.Texture,
-                        currentlyHeldItem.Position.ToPoint().ToVector2(),
+                        currentlyHeldItem.Position,
                         currentlyHeldItem.SourceRectangle,
                         currentlyHeldItem.Color,
                         currentlyHeldItem.Rotation,
@@ -1400,7 +1803,7 @@ namespace MyGame
 
 
 
-
+             
 
             //musicPlayerContainer.Add(musicPlayerMusicIcon, new Vector2(2, 2));
             musicPlayerContainer.Add(musicPlayerPanel, new Vector2(0, 0));
@@ -1496,6 +1899,7 @@ namespace MyGame
         }   
         public override void Update(GameTime gameTime)
         {
+            Rotation = (float)MathF.Atan2(Velocity.Y,Velocity.X);
             Vector2 rotatedOffset = Vector2.Transform(baseRectangleOffset, Matrix.CreateRotationZ(Rotation));
             RectangleOffset = rotatedOffset;
             base.Update(gameTime);
@@ -1505,11 +1909,13 @@ namespace MyGame
     {
         public ColliderObject WhoShotTheProjectile { get { return whoShotTheProjectile; } set { whoShotTheProjectile = value; } }
         private ColliderObject whoShotTheProjectile;
+        public bool canCollideWithSameType = false;
         protected Vector2 baseRectangleOffset;
         private bool destroyed = false;
         public float LifeTime { get { return lifeTime; } set { lifeTime = value; } }
         private float lifeTime = 5.0f;
         public static int projectileCount = 0;
+        private int damage = 67;
         public Projectile() :base()
         {
             ++projectileCount;
@@ -1533,17 +1939,32 @@ namespace MyGame
                 Destroy();
                 return;
             }
+            /*
             if (Collision.CheckProjectileCollision(this))
             {
                 Destroy();
                 return;
             }
-
+            */
             base.Update(gameTime);
         }
         public override void OnCollide(ColliderObject otherCollider)
         {
-            if (destroyed || otherCollider == whoShotTheProjectile) return;
+            Console.WriteLine(this.GetType().Name);
+            if (destroyed) return;
+            if (otherCollider == whoShotTheProjectile)
+            {
+                return;
+            }
+            /*
+            if (otherCollider.GetType().Name != this.GetType().Name)
+            {
+                return;
+            }*/
+            if (otherCollider is Character character)
+            {
+                character.Damage((float)damage);
+            }
             Destroy();
             base.OnCollide(otherCollider);
         }
@@ -1628,7 +2049,6 @@ namespace MyGame
         public bool consumable = false;
         public int amount = 1;
         public float useTime = 0.1f;
-        private bool canUse = true;
         public Texture2D icon; // must be 16x16
         public bool stackable = true;
         public Vector2 HandPos
@@ -1681,7 +2101,6 @@ namespace MyGame
         public virtual void Use(Character user)
         {
             OnUse(user);
-            canUse = false;
         }
 
         public void Drop()
@@ -1821,37 +2240,62 @@ namespace MyGame
         private static List<CombatText> combatTexts = new List<CombatText>();
         private string text = "";
         private Vector2 scale = Vector2.One;
-        private Color color;
+        private Color color = Color.White;
         private Vector2 position;
+        private float lifeTime = 5.0f;
         enum Type
         {
             NONE,
             
         }
+        public static void CreateText(string text, Vector2 worldPos, Color? color = null, Vector2? scale = null, float life = 5.0f)
+        {
+            CombatText combatText = new CombatText(text, color, scale);
+            combatText.position = worldPos;
+            combatText.lifeTime = life;
+            combatTexts.Add(combatText);
+        }
         public static void CreateText(string text, Color? color = null, Vector2? scale = null)
         {
-            CombatText cText = new CombatText(text, color, scale);
-            combatTexts.Add(cText);
+            CreateText(text, Vector2.Zero, color, scale, 5.0f);
         }
         public static void CreateText(string text, Color? color = null, float? scale = null)
         {
-            Vector2 scl = new Vector2(scale ?? 1.0f);
-            CreateText(text, color, scl);
+            CreateText(text, Vector2.Zero, color, scale.HasValue? new Vector2(scale.Value) : (Vector2?) null , 5.0f);
         }
         private CombatText(string text, Color? color = null, Vector2? scale = null)
         {
             this.text = text;
             this.color = color ?? Color.White;
             this.scale = scale ?? Vector2.One;
+            this.lifeTime = 5.0f;
         }
-
+        
+        public CombatText(Object obj, int damage)
+        {
+            this.text = damage.ToString();
+            this.position = obj.Position - new Vector2(0, 8);
+            this.color = Color.White;
+            this.scale = Vector2.One;
+            this.lifeTime = 1.0f;
+            combatTexts.Add(this);
+        }
          
         public static void DrawTexts(SpriteBatch spriteBatch,SpriteFont spriteFont ,GameTime gameTime)
         {
             for (int i = 0; i < combatTexts.Count; ++i)
             {
                 CombatText combatText = combatTexts[i];
-                spriteBatch.DrawString(spriteFont, combatText.text, combatText.position, combatText.color);
+                float combatTextSize = 0.1f;
+                spriteBatch.DrawString(spriteFont, combatText.text, combatText.position - new Vector2(combatTextSize*5), Color.Red, 0.0f, Vector2.Zero, combatText.scale + new Vector2(combatTextSize), SpriteEffects.None, 0.0f);
+                spriteBatch.DrawString(spriteFont, combatText.text, combatText.position, combatText.color, 0.0f, Vector2.Zero, combatText.scale, SpriteEffects.None, 0.0f);
+
+                combatText.position.Y -= 20.0f * (float)gameTime.ElapsedGameTime.TotalSeconds;
+                combatText.lifeTime -= (float)gameTime.ElapsedGameTime.TotalSeconds;
+                if (combatText.lifeTime <= 0)
+                {
+                    combatTexts.Remove(combatText);
+                }
             }
         }
     }
@@ -2060,8 +2504,8 @@ namespace MyGame
     public class QuadTree
     {
         public static int currentMaxLevel = 0;
-        private int maxObjects = 2;
-        private int maxLevel = byte.MaxValue;
+        private int maxObjects = 4;
+        private int maxLevel = 67;
 
         private int level;
         private List<ColliderObject> objects;
@@ -2197,20 +2641,17 @@ namespace MyGame
         }
             
 
-        public void DrawRectangleOutline(SpriteBatch spriteBatch, Color color, Texture2D tex)
+        public void DrawRectangleOutline(SpriteBatch spriteBatch, Color color)
         {
-
-            if (color == default)
-                color = new Color(49, 84, 141) * 0.9f;
+            Color outlineColor = new Color(color.R, color.G, color.B, (byte)255);
             Rectangle target = bounds;
 
 
             int outline = 1;
-            byte a = color.A;
-            spriteBatch.Draw(tex, new Rectangle(target.X, target.Y, target.Width, outline), color);
-            spriteBatch.Draw(tex, new Rectangle(target.X, target.Y, outline, target.Height), color);
-            spriteBatch.Draw(tex, new Rectangle(target.X, target.Y + target.Height - outline, target.Width, outline), color);
-            spriteBatch.Draw(tex, new Rectangle(target.X + target.Width - outline, target.Y, outline, target.Height), color);
+            spriteBatch.Draw(Main.pixel, new Rectangle(target.X, target.Y, target.Width, outline), outlineColor);
+            spriteBatch.Draw(Main.pixel, new Rectangle(target.X, target.Y, outline, target.Height), outlineColor);
+            spriteBatch.Draw(Main.pixel, new Rectangle(target.X, target.Y + target.Height - outline, target.Width, outline), outlineColor);
+            spriteBatch.Draw(Main.pixel, new Rectangle(target.X + target.Width - outline, target.Y, outline, target.Height), outlineColor);
 
 
 
@@ -2218,7 +2659,7 @@ namespace MyGame
             {
                 if (node != null)
                 {
-                    node.DrawRectangleOutline(spriteBatch, color, tex);
+                    node.DrawRectangleOutline(spriteBatch, color);
                 }
             }
         }
@@ -2226,7 +2667,17 @@ namespace MyGame
 
 
     }
+    public class Background
+    {
+        Texture2D currentBackground;
+        Texture2D nextBackground;
+        Texture2D previousBackground;
 
+        public void Update(GameTime gameTime)
+        {
+
+        }
+    }
 
     
     public class World
@@ -2260,7 +2711,7 @@ namespace MyGame
             int leftTile = Math.Max(0, (int)(position.X / 8));
             int rightTile = Math.Min(World.tiles.GetLength(0) - 1, (int)((position.X + w - 1 )/8));
             int topTile = Math.Max(0, (int)(position.Y / 8));
-            int bottomTile = Math.Min(World.tiles.GetLength(1) - 1, (int)((position.Y + w - 1) / 8));
+            int bottomTile = Math.Min(World.tiles.GetLength(1) - 1, (int)((position.Y + h - 1) / 8));
 
             for (int x = leftTile; x <= rightTile; ++x)
             {
@@ -2270,7 +2721,10 @@ namespace MyGame
                     if (tile == null || !tile.Solid) { continue; }
                     Rectangle tileRectangle = new Rectangle(x * 8, y * 8, 8, 8);
                     Rectangle objRectangle = new Rectangle((int)position.X, (int)position.Y, w, h);
-                    return objRectangle.Intersects(tileRectangle);
+                    if (objRectangle.Intersects(tileRectangle))
+                    {
+                        return true;
+                    }
                 }
             }
             return false;
@@ -2283,7 +2737,6 @@ namespace MyGame
             Vector2 position = obj.Position + obj.RectangleOffset;
             int w = obj.Rectangle.Width;
             int h = obj.Rectangle.Height;
-
             Vector2 nextPosX = position + new Vector2(velocity.X * (float)gameTime.ElapsedGameTime.TotalSeconds, 0);
             if (CheckCollisionAtPosition(nextPosX, w, h))
             {
@@ -2300,6 +2753,7 @@ namespace MyGame
                 }
             }
 
+            Vector2 currentPos = obj.Position + obj.RectangleOffset;
             Vector2 nextPosY = position + new Vector2(0, velocity.Y * (float)gameTime.ElapsedGameTime.TotalSeconds);
             if (CheckCollisionAtPosition(nextPosY, w, h))
             {
@@ -2321,13 +2775,27 @@ namespace MyGame
             }
             else
             {
-                obj.OnFloor = false;
+                Vector2 groundPos = currentPos + new Vector2(0, 1);
+                if (!CheckCollisionAtPosition(groundPos, w, h))
+                {
+                    obj.OnFloor = false;
+                }
             }
 
+            Vector2 groundPosition = currentPos + new Vector2(0, 1);
+            if (CheckCollisionAtPosition(groundPosition, w, h))
+            {
+                Tile tile = World.tiles[Math.Min(World.tiles.GetLength(0) - 1, (int)groundPosition.X/8), Math.Min(World.tiles.GetLength(1) - 1, (int)groundPosition.Y/8)];
+                obj.OnTileCollide(tile);
+            }
             return newVelocity;
         }
-        
+
         public static bool CheckCollisionAtPosition(Vector2 position, int w, int h)
+        {
+            return CheckCollisionAtPosition(position, w, h, out _, out _);
+        }
+        public static bool CheckCollisionAtPosition(Vector2 position, int w, int h, out Vector2? tilePos, out Tile tile)
         {
             int leftTile = Math.Max(0, (int)(position.X / 8));
             int rightTile = Math.Min(World.tiles.GetLength(0) - 1, (int)((position.X + w - 1) / 8));
@@ -2339,19 +2807,27 @@ namespace MyGame
             {
                 for (int y = topTile; y <= bottomTile; ++y)
                 {
-                    Tile tile = World.tiles[x, y];
-                    if (tile == null || !tile.Solid) { continue; }
+                    Tile currentTile = World.tiles[x, y];
+                    if (currentTile == null || !currentTile.Solid) { continue; }
                     Rectangle tileRectangle = new Rectangle(x * 8, y * 8, 8, 8);
                     Rectangle objRectangle = new Rectangle((int)position.X, (int)position.Y, w, h);
-                    if (objRectangle.Intersects(tileRectangle)) return true;
+                    if (objRectangle.Intersects(tileRectangle))
+                    {
+                        tilePos = new Vector2(x, y);
+                        tile = currentTile;
+                        return true; 
+                    }
+                        
                 }
             }
 
 
 
-
+            tilePos = null;
+            tile = null;
             return false;
         }
+        
 
        public static bool CheckProjectileCollision(Projectile projectile)
        {
@@ -2366,6 +2842,7 @@ namespace MyGame
             return tile != null && tile.Solid;
        }
     }
+
     public class GameObject : Object
     {
 
@@ -2397,7 +2874,7 @@ namespace MyGame
             {
                 if (value == null)
                 {
-                    throw new System.Exception("Failed to set Texture");
+                    throw new System.Exception("Failed to set Texture" + " " + this.GetType().Name);
                 }
                 texture = value;
 
@@ -2568,11 +3045,11 @@ namespace MyGame
         private Vector2 cameraPos = Vector2.Zero;
 
         private QuadTree quadTree;
-        private static Texture2D pixel;
-
+        public static Texture2D pixel;
+        public static Random rand;
         private Button button;
 
-
+        private Enemy1 enemy;
         private SpriteFont spriteFont;
         private GameObject test;
         private static bool shouldExit = false;
@@ -2611,17 +3088,18 @@ namespace MyGame
         protected override void Initialize()
         {
             Console.WriteLine("Start of Initialization");
+            rand = new Random(67);
             quadTree = new QuadTree(0, new Rectangle(-UInt16.MaxValue, -UInt16.MaxValue, UInt16.MaxValue*2, UInt16.MaxValue*2));
+            pixel = new Texture2D(GraphicsDevice, 1, 1);
+            pixel.SetData(new Color[] { Color.White });
             test = new GameObject();
             player = new Player();
             player.Initialize();
             button = new Button();
             button.Position = new Vector2(100.0f, 100.0f);
             button.Rectangle = new Rectangle(100, 100, 100, 100);
-            pixel = new Texture2D(GraphicsDevice, 1, 1);
-            pixel.SetData(new Color[] { Color.White });
-            progressBar = new ProgressBar(CreateRectangleTexture(1, 1));
-            progressBar.Position = new Vector2(0, graphics.PreferredBackBufferHeight - 8.0f);
+            
+            
             // TODO: Add your initialization logic here
             camera = new Camera(graphics);
             Console.WriteLine("End of Initialization");
@@ -2640,6 +3118,8 @@ namespace MyGame
             test.Texture = AssetManager.GetTexture("Test");
             test.Origin = test.GetSize()/2.0f;
             player.LoadTextures();
+            progressBar = new ProgressBar(pixel);
+            progressBar.Position = new Vector2(0, graphics.PreferredBackBufferHeight - 8.0f);
             try
             {                                              
                 Console.WriteLine("Setting textures successful!");
@@ -2647,6 +3127,8 @@ namespace MyGame
             catch (Exception e) { Console.WriteLine(e); }
             player.LayerDepth = 0.01f;
             button.Texture = CreateRectangleTexture(button.Width, button.Height);
+            enemy = new Enemy1(AssetManager.GetTexture("Reference"), new Vector2(420, 420), UInt16.MaxValue);
+            AddObject(enemy);
             World.CreateWorld();
             objects.Add(player);
             objects.Add(button);
@@ -2708,7 +3190,7 @@ namespace MyGame
                     {
                         bool wasOnFloor = physicsObject.OnFloor;
                         Vector2 velocity = physicsObject.Velocity;
-                        if (physicsObject.AffectedByGravity && !wasOnFloor)
+                        if (physicsObject.AffectedByGravity && (!physicsObject.OnFloor || velocity.Y < 0.0f))
                         {
                             velocity.Y += (float)((98.1 * 6.7) * gameTime.ElapsedGameTime.TotalSeconds);
                         }
@@ -2717,13 +3199,6 @@ namespace MyGame
                             velocity.Y = 0f;
                         }
                         physicsObject.Velocity = Collision.ResolveCollision(physicsObject, velocity, gameTime);
-                        if (physicsObject.OnFloor && wasOnFloor)
-                        {
-                            physicsObject.OnFloor = true;
-                            physicsObject.Velocity = new Vector2(physicsObject.Velocity.X, 0.0f);
-                        }
-
-                        physicsObject.WasOnFloor = physicsObject.OnFloor;
                         physicsObject.Position += physicsObject.Velocity * (float)gameTime.ElapsedGameTime.TotalSeconds;
              
                     }
@@ -3022,7 +3497,7 @@ namespace MyGame
                     {
                         continue;
                     }*/
-                    spriteBatch.Draw(tile.Texture, pos, Color.White);
+                    spriteBatch.Draw(tile.Texture, pos, tile.color);
                 }
             }
 
@@ -3034,7 +3509,7 @@ namespace MyGame
                 
                 spriteBatch.Draw(
                     obj.Texture,
-                    obj.Position.ToPoint().ToVector2(),
+                    obj.Position,
                     obj.SourceRectangle,
                     obj.Color,
                     obj.Rotation,
@@ -3046,12 +3521,15 @@ namespace MyGame
                 
             }
             
-                DrawColliders(spriteBatch);
-                //DrawCollidersOutline<Projectile>(spriteBatch);
-            quadTree.DrawRectangleOutline(spriteBatch, Color.Red, pixel);
+            DrawColliders(spriteBatch);
+            CombatText.DrawTexts(spriteBatch, spriteFont, gameTime);
+            spriteBatch.End();
 
-                spriteBatch.End();
 
+
+            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.Opaque, SamplerState.PointWrap, null, null, null, transform);
+            quadTree.DrawRectangleOutline(spriteBatch, Color.Red);
+            spriteBatch.End();
 
             if (!player.UIHidden)
             {
