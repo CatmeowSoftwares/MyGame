@@ -533,6 +533,7 @@ namespace MyGame
     }
 
     // --- The OldDuke AI translated into your framework ---
+
     public static class OldDukeAI
     {
         // Constants to make the AI easier to read (mapping to original ai values)
@@ -755,6 +756,8 @@ namespace MyGame
         public AcidBlob(ColliderObject whoShot, Vector2 position, Vector2 velocity) : base()
         {
             this.WhoShotTheProjectile = whoShot;
+            this.CanCollideWithTiles = true;
+            this.Damage = 420;
             this.AffectedByGravity = false;
             this.Position = position;
             this.Velocity = velocity;
@@ -791,14 +794,10 @@ namespace MyGame
         public override void OnCollide(ColliderObject otherCollider)
         {
             // Deal small acid damage if hits a character (not the shooter)
-            if (otherCollider != this.WhoShotTheProjectile && otherCollider is Character c)
-            {
-                c.Damage(120f); // tune to taste
-            }
+            
 
             // create a small linger effect: spawn a short-lived "Acid Puddle" collider?
             // skip for now; simply destroy the blob
-            Destroy();
             base.OnCollide(otherCollider);
         }
     }
@@ -1915,10 +1914,17 @@ namespace MyGame
         public float LifeTime { get { return lifeTime; } set { lifeTime = value; } }
         private float lifeTime = 5.0f;
         public static int projectileCount = 0;
+        public int Damage { get { return damage; }set { damage = value; } }
         private int damage = 67;
         public Projectile() :base()
         {
+            this.CanCollideWithTiles = false;
             ++projectileCount;
+        }
+        public override void OnTileCollide(Tile tile)
+        {
+            Destroy();
+            base.OnTileCollide(tile);
         }
         public override void Destroy()
         {
@@ -1964,8 +1970,10 @@ namespace MyGame
             if (otherCollider is Character character)
             {
                 character.Damage((float)damage);
+                Destroy();
             }
-            Destroy();
+
+            //Destroy();
             base.OnCollide(otherCollider);
         }
     }
@@ -3062,7 +3070,7 @@ namespace MyGame
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
             graphics.SynchronizeWithVerticalRetrace = false;
-            IsFixedTimeStep = false;
+            IsFixedTimeStep = true;
             //graphics.IsFullScreen = true;
             //graphics.HardwareModeSwitch = false;
 
@@ -3198,8 +3206,15 @@ namespace MyGame
                         {
                             velocity.Y = 0f;
                         }
-                        physicsObject.Velocity = Collision.ResolveCollision(physicsObject, velocity, gameTime);
-                        physicsObject.Position += physicsObject.Velocity * (float)gameTime.ElapsedGameTime.TotalSeconds;
+                        if (physicsObject.CanCollideWithTiles)
+                        {
+                            physicsObject.Velocity = Collision.ResolveCollision(physicsObject, velocity, gameTime);
+                        }
+                        else
+                        {
+                            physicsObject.Velocity = velocity;
+                        }
+                            physicsObject.Position += physicsObject.Velocity * (float)gameTime.ElapsedGameTime.TotalSeconds;
              
                     }
 
