@@ -336,7 +336,7 @@ namespace MyGame
 
         public Camera(Rectangle rectangle, Vector2 center)
         {
-            this.Center = center;
+            this.Center = center.ToPoint().ToVector2();
             _quarterScreen = new Vector2(rectangle.Width / 2, rectangle.Height / 2);
         }
 
@@ -353,7 +353,7 @@ namespace MyGame
 
             if ((target - Center).Length() < movePercentage || movePercentage != 1.0f)  
             {
-                Center = target;
+                Center = target.ToPoint().ToVector2();
             }
         }
 
@@ -387,6 +387,9 @@ namespace MyGame
 
         public bool OnFloor { get { return onFloor; } set { onFloor = value; } }
         private bool onFloor = false;
+
+        public bool WasOnFloor { get { return wasOnFloor; } set { wasOnFloor = value; } }
+        private bool wasOnFloor = false;
 
         public float TerminalVelocity {  get { return terminalVelocity; } set { terminalVelocity = value; } }
         private float terminalVelocity = 420.0f;
@@ -488,7 +491,12 @@ namespace MyGame
             }
         }
         private int direction = 1;
-
+        public virtual void Damage(float value)
+        {
+            if (value < 0) return;
+            health -= value;
+            if (health <= 0) Destroy();
+        }
         public void Die()
         {
 
@@ -859,7 +867,7 @@ namespace MyGame
             }
 
 
-
+            /*
             if (Input.IsKeyDown(Keys.W))
             {
                 velocity.Y -= (float)(MoveSpeed * gameTime.ElapsedGameTime.TotalSeconds);
@@ -873,19 +881,17 @@ namespace MyGame
                 //.Y -= (float)(MoveSpeed * gameTime.ElapsedGameTime.TotalSeconds) * Direction;
                 velocity.Y = 0;
             }
+            */
 
 
-
-            /*
+            
             if (Input.IsKeyPressed(Keys.Space))
             {
-                Vector2 velocity = Velocity;
-                velocity.Y = -400;
-                Velocity = velocity;
+                velocity.Y = JumpPower;
 
             }
 
-            */
+            
 
             velocity.X = Math.Clamp(velocity.X, -MaxSpeed, MaxSpeed);
             velocity.Y = Math.Clamp(velocity.Y, -MaxSpeed, MaxSpeed);
@@ -1212,7 +1218,7 @@ namespace MyGame
             {
                 spriteBatch.Draw(
                         currentlyHeldItem.Texture,
-                        currentlyHeldItem.Position,
+                        currentlyHeldItem.Position.ToPoint().ToVector2(),
                         currentlyHeldItem.SourceRectangle,
                         currentlyHeldItem.Color,
                         currentlyHeldItem.Rotation,
@@ -1525,7 +1531,11 @@ namespace MyGame
             if (lifeTime <= 0.0f)
             {
                 Destroy();
-                Main.RemoveObject(this);
+                return;
+            }
+            if (Collision.CheckProjectileCollision(this))
+            {
+                Destroy();
                 return;
             }
 
@@ -1535,7 +1545,6 @@ namespace MyGame
         {
             if (destroyed || otherCollider == whoShotTheProjectile) return;
             Destroy();
-            Main.RemoveObject(this);
             base.OnCollide(otherCollider);
         }
     }
@@ -2230,7 +2239,7 @@ namespace MyGame
         {
             for (int x = 0; x < World.tiles.GetLength(0); ++x)
             {
-                for (int y = 0; y < World.tiles.GetLength(1); ++y)
+                for (int y = 100; y < World.tiles.GetLength(1); ++y)
                 {
                     tiles[x, y] = new Tile((Tile.TileType)1, x, y);
                 }
@@ -2243,150 +2252,119 @@ namespace MyGame
     {
         public static bool CheckTileCollision(ColliderObject obj)
         {
-            Vector2 position = obj.Position;
-
-            int width = obj.Rectangle.Width;
-            int height = obj.Rectangle.Height;
-            int TL = (int)(position.X / 8.0) - 1;
-            int TR = (int)((position.X + width) / 8.0) + 2;
-            int BL = (int)(position.Y / 8.0) - 1;
-            int BR = (int)(position.Y + height / 8.0) + 2;
+            Vector2 position = obj.Position + obj.RectangleOffset;
+            int w = obj.Rectangle.Width;
+            int h = obj.Rectangle.Height;
 
 
-            for (int x = TL; x < TR; ++x)
+            int leftTile = Math.Max(0, (int)(position.X / 8));
+            int rightTile = Math.Min(World.tiles.GetLength(0) - 1, (int)((position.X + w - 1 )/8));
+            int topTile = Math.Max(0, (int)(position.Y / 8));
+            int bottomTile = Math.Min(World.tiles.GetLength(1) - 1, (int)((position.Y + w - 1) / 8));
+
+            for (int x = leftTile; x <= rightTile; ++x)
             {
-                for (int y = BL; y < BR; ++y)
+                for (int y = topTile; y <= bottomTile; ++y)
                 {
                     Tile tile = World.tiles[x, y];
-                    if (tile == null) { continue; }
-                    Vector2 vector2;
-                    vector2.X = (float)(x * 8.0);
-                    vector2.Y = (float)(y * 8.0);
-                    if (TopTile(tile))
-                    {
-
-                    }
-                    else if (BottomTile(tile))
-                    {
-
-                    }
-                    else if (LeftTile(tile))
-                    {
-                        
-                    }
-                    else if (RightTile(tile))
-                    {
-
-                    }
-                    if (position.X + width > vector2.X && 
-                        position.X < vector2.X + 8.0 && 
-                        position.Y + height > vector2.Y && 
-                        position.Y < vector2.Y + 8.0)
-                    {
-                        if (tile.Solid)
-                        {
-                            return true;
-                        }
-                    }
-                }
-            }
-            return false;
-        }
-        public static bool CheckTileCollision(PhysicsObject obj)
-        {
-            Vector2 position = obj.Position;
-
-            int width = obj.Rectangle.Width;
-            int height = obj.Rectangle.Height;
-            int TL = (int)(position.X / 8.0) - 1;
-            int TR = (int)((position.X + width) / 8.0) + 2;
-            int BL = (int)(position.Y / 8.0) - 1;
-            int BR = (int)(position.Y + height / 8.0) + 2;
-
-
-            for (int x = TL; x < TR; ++x)
-            {
-                for (int y = BL; y < BR; ++y)
-                {
-                    Tile tile = World.tiles[x, y];
-                    if (tile == null) { continue; }
-                    Vector2 vector2;
-                    vector2.X = (float)(x * 8.0);
-                    vector2.Y = (float)(y * 8.0);
-                    if (TopTile(tile))
-                    {
-
-                    }
-                    else if (BottomTile(tile))
-                    {
-
-                    }
-                    else if (LeftTile(tile))
-                    {
-                        obj.OnFloor = true;
-                        Vector2 velocity = obj.Velocity;
-                        velocity.X = 0.0f;
-                        obj.Velocity = velocity;
-                    }
-                    else if (RightTile(tile))
-                    {
-
-                    }
-                    if (position.X + width > vector2.X &&
-                        position.X < vector2.X + 8.0 &&
-                        position.Y + height > vector2.Y &&
-                        position.Y < vector2.Y + 8.0)
-                    {
-                        if (tile.Solid)
-                        {
-                            return true;
-                        }
-                    }
+                    if (tile == null || !tile.Solid) { continue; }
+                    Rectangle tileRectangle = new Rectangle(x * 8, y * 8, 8, 8);
+                    Rectangle objRectangle = new Rectangle((int)position.X, (int)position.Y, w, h);
+                    return objRectangle.Intersects(tileRectangle);
                 }
             }
             return false;
         }
 
-        public static bool TopTile(Tile tile)
+
+        public static Vector2 ResolveCollision(PhysicsObject obj, Vector2 velocity, GameTime gameTime)
         {
-            return false;
-        }
-        public static bool BottomTile(Tile tile)
-        {
-            if ()
+            Vector2 newVelocity = velocity;
+            Vector2 position = obj.Position + obj.RectangleOffset;
+            int w = obj.Rectangle.Width;
+            int h = obj.Rectangle.Height;
+
+            Vector2 nextPosX = position + new Vector2(velocity.X * (float)gameTime.ElapsedGameTime.TotalSeconds, 0);
+            if (CheckCollisionAtPosition(nextPosX, w, h))
             {
-                return true;
+                newVelocity.X = 0;
+                if (velocity.X > 0)
+                {
+                    int rightTile = (int)((nextPosX.X + w - 1) / 8);
+                    obj.Position = new Vector2(rightTile * 8 - w - obj.RectangleOffset.X, obj.Position.Y);
+                }
+                else if (velocity.X < 0)
+                {
+                    int leftTile = (int)(nextPosX.X / 8);
+                    obj.Position = new Vector2((leftTile + 1) * 8 - obj.RectangleOffset.X, obj.Position.Y);
+                }
             }
-            return false;
+
+            Vector2 nextPosY = position + new Vector2(0, velocity.Y * (float)gameTime.ElapsedGameTime.TotalSeconds);
+            if (CheckCollisionAtPosition(nextPosY, w, h))
+            {
+                newVelocity.Y = 0;
+
+                if (velocity.Y > 0)
+                {
+                    int bottomTile = (int)((nextPosY.Y + h - 1) / 8);
+                    obj.Position = new Vector2(obj.Position.X, bottomTile * 8 - h - obj.RectangleOffset.Y);
+                    obj.OnFloor = true;
+                    newVelocity.Y = 0.0f;
+                }
+                else if (velocity.Y < 0)
+                {
+                    int topTile = (int)(nextPosY.Y / 8);
+                    obj.Position = new Vector2(obj.Position.X, (topTile + 1) * 8 - obj.RectangleOffset.Y);
+                    newVelocity.Y = 0.0f;
+                }
+            }
+            else
+            {
+                obj.OnFloor = false;
+            }
+
+            return newVelocity;
         }
-        public static bool LeftTile(Tile tile)
+        
+        public static bool CheckCollisionAtPosition(Vector2 position, int w, int h)
         {
-            return false;
-        }
-        public static bool RightTile(Tile tile)
-        {
-            return false;
-        }
+            int leftTile = Math.Max(0, (int)(position.X / 8));
+            int rightTile = Math.Min(World.tiles.GetLength(0) - 1, (int)((position.X + w - 1) / 8));
+            int topTile = Math.Max(0, (int)(position.Y / 8));
+            int bottomTile = Math.Min(World.tiles.GetLength(1) - 1, (int)((position.Y + h - 1) / 8));
+
+
+            for (int x = leftTile; x <= rightTile; ++x)
+            {
+                for (int y = topTile; y <= bottomTile; ++y)
+                {
+                    Tile tile = World.tiles[x, y];
+                    if (tile == null || !tile.Solid) { continue; }
+                    Rectangle tileRectangle = new Rectangle(x * 8, y * 8, 8, 8);
+                    Rectangle objRectangle = new Rectangle((int)position.X, (int)position.Y, w, h);
+                    if (objRectangle.Intersects(tileRectangle)) return true;
+                }
+            }
 
 
 
 
-        public static bool TopLeftTile(Tile tile)
-        {
             return false;
         }
-        public static bool TopRightTile(Tile tile)
-        {
-            return false;
-        }
-        public static bool BottomLeftTile(Tile tile)
-        {
-            return false;
-        }
-        public static bool BottomRightTile(Tile tile)
-        {
-            return false;
-        }
+
+       public static bool CheckProjectileCollision(Projectile projectile)
+       {
+            Vector2 position = projectile.Position + projectile.RectangleOffset;
+            int tileX = (int)(position.X / 8);
+            int tileY = (int)(position.Y / 8);
+
+            if (tileX < 0 || tileX >= World.tiles.GetLength(0) ||
+                tileY < 0 || tileY >= World.tiles.GetLength(1)) return true;
+
+            Tile tile = World.tiles[tileX, tileY];
+            return tile != null && tile.Solid;
+       }
     }
     public class GameObject : Object
     {
@@ -2472,7 +2450,7 @@ namespace MyGame
         public virtual void Update(GameTime gameTime) { }
         public virtual void Destroy()
         {
-
+            Main.RemoveObject(this);
         }
         public void Resize(float value)
         {
@@ -2685,7 +2663,7 @@ namespace MyGame
             if (!this.IsActive) return;
             objectsToDraw.Clear();
             // process inputs -> process behaviors -> calculate velocities -> move entities -> resolve collisions -> render frame  
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape) || shouldExit)
+            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || /*Keyboard.GetState().IsKeyDown(Keys.Escape) ||*/ shouldExit)
                 Exit();
             // process inputs
             Input.UpdateInput();
@@ -2726,25 +2704,29 @@ namespace MyGame
                 {
                     PhysicsObject physicsObject = (PhysicsObject)obj;
                     // move entities
-                    Vector2 velocity = physicsObject.Velocity;
                     if (!physicsObject.PhysicsDisabled)
                     {
-                        if (physicsObject.AffectedByGravity)
+                        bool wasOnFloor = physicsObject.OnFloor;
+                        Vector2 velocity = physicsObject.Velocity;
+                        if (physicsObject.AffectedByGravity && !wasOnFloor)
                         {
-                            if (!physicsObject.OnFloor)
-                            {
-
-                                //velocity.Y += (float)((98.1 * 2) * gameTime.ElapsedGameTime.TotalSeconds);
-                            }
-                            else
-                            {
-                                velocity.Y = 0;
-                            }
+                            velocity.Y += (float)((98.1 * 6.7) * gameTime.ElapsedGameTime.TotalSeconds);
                         }
-                    }
+                        else if (wasOnFloor)
+                        {
+                            velocity.Y = 0f;
+                        }
+                        physicsObject.Velocity = Collision.ResolveCollision(physicsObject, velocity, gameTime);
+                        if (physicsObject.OnFloor && wasOnFloor)
+                        {
+                            physicsObject.OnFloor = true;
+                            physicsObject.Velocity = new Vector2(physicsObject.Velocity.X, 0.0f);
+                        }
 
-                    physicsObject.Velocity = velocity;
-                    physicsObject.Position += physicsObject.Velocity * (float)gameTime.ElapsedGameTime.TotalSeconds;
+                        physicsObject.WasOnFloor = physicsObject.OnFloor;
+                        physicsObject.Position += physicsObject.Velocity * (float)gameTime.ElapsedGameTime.TotalSeconds;
+             
+                    }
 
                 }
                 // resolve collision
@@ -2991,14 +2973,12 @@ namespace MyGame
                     }
                 }
             }
-            if (returnObjects.Count != 0)
-            Console.WriteLine(returnObjects.Count);
 
-            cameraPos = player.Position;
             //camera.MoveToward(cameraPos + new Vector2(16, 16), (float)gameTime.ElapsedGameTime.TotalMilliseconds, 1.0f);
-            camera.MoveToward(cameraPos + new Vector2(16, 16));
+            
             Animation.UpdateAnimations(gameTime);
-
+            cameraPos = player.Position;
+            camera.MoveToward(cameraPos + new Vector2(16, 16), (float)gameTime.ElapsedGameTime.TotalMilliseconds, 1.0f);
 
 
             foreach (var obj in objectsToRemove.ToList())
@@ -3019,7 +2999,7 @@ namespace MyGame
         {
             GraphicsDevice.Clear(Color.Black);
             // TODO: Add your drawing code here
-            Matrix transform = Matrix.CreateTranslation(-camera.GetTopLeft().X, -camera.GetTopLeft().Y, 0);//* Matrix.CreateScale(0.5f);
+            Matrix transform = Matrix.CreateTranslation(-(float)Math.Round(camera.GetTopLeft().X), -(float)Math.Round(camera.GetTopLeft().Y), 0);//* Matrix.CreateScale(0.5f);
             spriteBatch.Begin(SpriteSortMode.Deferred, samplerState: SamplerState.PointWrap, transformMatrix: transform);
             int startX = Math.Max(0, (int)camera.GetTopLeft().X / 8);
             int startY = Math.Max(0, (int)camera.GetTopLeft().Y / 8);
@@ -3054,7 +3034,7 @@ namespace MyGame
                 
                 spriteBatch.Draw(
                     obj.Texture,
-                    obj.Position,
+                    obj.Position.ToPoint().ToVector2(),
                     obj.SourceRectangle,
                     obj.Color,
                     obj.Rotation,
@@ -3068,7 +3048,7 @@ namespace MyGame
             
                 DrawColliders(spriteBatch);
                 //DrawCollidersOutline<Projectile>(spriteBatch);
-            //quadTree.DrawRectangleOutline(spriteBatch, Color.Red, pixel);
+            quadTree.DrawRectangleOutline(spriteBatch, Color.Red, pixel);
 
                 spriteBatch.End();
 
@@ -3129,7 +3109,8 @@ namespace MyGame
                 }
 
                 spriteBatch.DrawString(spriteFont, fps.ToString(), new Vector2(0, graphics.PreferredBackBufferHeight - 16.0f), Color.Magenta);
-                spriteBatch.DrawString(spriteFont, QuadTree.currentMaxLevel.ToString(), new Vector2(0, graphics.PreferredBackBufferHeight - 32.0f), Color.Magenta);
+                spriteBatch.DrawString(spriteFont, player.Position.ToPoint().ToString(), new Vector2(0, graphics.PreferredBackBufferHeight - 32.0f), Color.Magenta);
+                spriteBatch.DrawString(spriteFont, player.Velocity.ToPoint().ToString(), new Vector2(0, graphics.PreferredBackBufferHeight - 48.0f), Color.Magenta);
                 spriteBatch.End();
 
 
