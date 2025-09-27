@@ -539,9 +539,12 @@ namespace MyGame
     }
     public class Character : PhysicsObject
     {
+        
         public float Health { get { return health; } set { health = value; } }
         private float health = 100.0f;
-
+        
+        public float PreviousHealth { get { return previousHealth; } set { previousHealth = value; } }
+        private float previousHealth;
         public float MaxHealth { get { return maxHealth; } set { maxHealth = value; } }
         private float maxHealth = 100.0f;
 
@@ -553,7 +556,6 @@ namespace MyGame
         protected float invisbleOpacity = 0.1f;
         private float friction = 0.85f;
         public float Friction { get { return friction; } set { friction = value; } }
-        private ProgressBar progressBar;
         public AI AI { get { return aI; } set { aI = value; } }
         private AI aI; 
         public int Direction
@@ -566,25 +568,38 @@ namespace MyGame
         }
         private int direction = 1;
 
+
+
+
+
+
+
+
+
+
+
+        public float healthBarTimer = 5.0f;
+        public bool healthBarStartedCountingDown = false;
+        public bool healthBarFading = false;
+
+        public byte healthBarOpacity = (byte)0;
+
+
+
         public Character(float health, Vector2? position = null, Vector2? velocity = null)
         {
             this.Position = position ?? Vector2.Zero;
             this.Velocity = velocity ?? Vector2.Zero;
             this.Health = health;
             this.MaxHealth = health;
-            progressBar = new ProgressBar(Main.pixel, max: MaxHealth);
         }
  
         public override void Update(GameTime gameTime)
         {
-            progressBar.Position = Position;
-            progressBar.Value = Health;
-            progressBar.Update(gameTime);
             base.Update(gameTime);
         }
         public override void Draw(SpriteBatch spriteBatch, GameTime gameTime)
         {
-            spriteBatch.Draw(progressBar.Texture, progressBar.Position, progressBar.SourceRectangle, progressBar.Color, progressBar.Rotation, progressBar.Origin, progressBar.Scale, progressBar.Effects, progressBar.LayerDepth);
             base.Draw(spriteBatch, gameTime);
         }
         public virtual void Damage(float value)
@@ -765,7 +780,7 @@ namespace MyGame
 
         public Player(float health) : base(health)
         {
-
+            this.SetSize(32, 32);
         }
 
         
@@ -994,15 +1009,6 @@ namespace MyGame
             velocity.Y = Math.Clamp(velocity.Y, -MaxSpeed, MaxSpeed);
             this.Velocity = velocity;
 
-            if (attacking || aiming)
-            {
-                Direction = Input.MousePosition.X + Main.camera.GetTopLeft().X < Position.X ? -1 : 1;
-            }
-            else
-            {
-                if (Velocity.X < 0.0f) Direction = -1;
-                else if (Velocity.X > 0.0f) Direction = 1; ;
-            }
 
 
             if (Input.IsKeyPressed(Keys.D1)) { selectedItemIndex = 0; }
@@ -1162,9 +1168,12 @@ namespace MyGame
                 }
                 else if (currentlyHeldItem.holdStyle == Item.HoldStyle.Back)
                 {
-                    currentlyHeldItem.TextureOffset = new Vector2(-12, -12);
-                    currentlyHeldItem.Effects = (Direction == 1) ? SpriteEffects.FlipVertically : SpriteEffects.FlipHorizontally | SpriteEffects.FlipVertically;
-                    currentlyHeldItem.LayerDepth = 1.0f;
+                    if (!attacking)
+                    {
+                        currentlyHeldItem.PositionOffset = new Vector2(-12, -12);
+                        currentlyHeldItem.Effects = (Direction == 1) ? SpriteEffects.FlipVertically : SpriteEffects.FlipHorizontally | SpriteEffects.FlipVertically;
+                        currentlyHeldItem.LayerDepth = 1.0f;
+                    }
                 }
 
 
@@ -1183,6 +1192,33 @@ namespace MyGame
                         {
 
                         }
+                        else if (currentlyHeldItem.useStyle == Item.UseStyle.Swing)
+                        {
+
+                            attacking = true;
+                            
+                            currentlyHeldItem.Effects = (Direction == -1) ? SpriteEffects.FlipVertically : SpriteEffects.None;
+                            
+                            if (Direction == 1)
+                            {
+                                currentlyHeldItem.RotationDegrees = 0;
+                                currentlyHeldItem.Effects = SpriteEffects.None;
+                                Vector2 origin = currentlyHeldItem.Origin;
+                                origin.X = 0f;
+                                origin.Y = GetSize().Y;
+                                currentlyHeldItem.Origin = origin;
+                            }
+                            else
+                            {
+                                currentlyHeldItem.Effects = SpriteEffects.FlipVertically;
+                                Vector2 origin = currentlyHeldItem.Origin;
+                                origin.X = 0.0f;
+                                origin.Y = 0.0f;
+                                currentlyHeldItem.Origin = origin;
+                                
+                            }
+                            
+                        }
                     }
                 }
                 else if (currentlyHeldItem.clickType == Item.ClickType.Hold)
@@ -1192,13 +1228,46 @@ namespace MyGame
                         currentlyHeldItem.Use(this);
                     }
                 }
-                
+
+
+
+                if (attacking)
+                {
+                    if (Direction == 1)
+                    {
+                        currentlyHeldItem.RotationDegrees += ((float)gameTime.ElapsedGameTime.TotalSeconds * 256) * Direction;
+                    }
+                    else if (Direction == -1)
+                    {
+                        currentlyHeldItem.RotationDegrees += ((float)gameTime.ElapsedGameTime.TotalSeconds * 256) * Direction;
+
+                    }
+                    Console.WriteLine(currentlyHeldItem.RotationDegrees);
+                }
+
+                if (Direction == 1)
+                {
+                    if (currentlyHeldItem.RotationDegrees >= 90.0f)
+                    {
+                        attacking = false;
+                        currentlyHeldItem.RotationDegrees = 0.0f;
+                    }
+                }
+                else if (Direction == -1)
+                {
+                    if (currentlyHeldItem.RotationDegrees >= 0.0f)
+                    {
+                        attacking = false;
+                        currentlyHeldItem.RotationDegrees = 0.0f;
+                    }
+                }
+               
+
             }
             else
             {
                 aiming = false;
             }
-
 
             if (Direction == 1)
             {
@@ -1309,6 +1378,19 @@ namespace MyGame
             }
             lastPlayerState = playerState;
             //Console.WriteLine(playerState);
+
+
+
+
+            if (attacking || aiming)
+            {
+                Direction = Input.MousePosition.X + Main.camera.GetTopLeft().X < Position.X ? -1 : 1;
+            }
+            else
+            {
+                if (Velocity.X < 0.0f) Direction = -1;
+                else if (Velocity.X > 0.0f) Direction = 1; ;
+            }
             base.Update(gameTime);
         }
 
@@ -1318,7 +1400,7 @@ namespace MyGame
             {
                 spriteBatch.Draw(
                         currentlyHeldItem.Texture,
-                        currentlyHeldItem.Position + currentlyHeldItem.TextureOffset,
+                        currentlyHeldItem.Position + currentlyHeldItem.PositionOffset,
                         currentlyHeldItem.SourceRectangle,
                         currentlyHeldItem.Color,
                         currentlyHeldItem.Rotation,
@@ -1689,6 +1771,9 @@ namespace MyGame
                 icon = AssetManager.GetTexture("SwordIcon");
                 Texture = AssetManager.GetTexture("Sword");
             }
+            Vector2 origin = this.Origin;
+            origin.Y = GetSize().Y;
+            this.Origin = origin;
 
         }
     }
@@ -1722,6 +1807,8 @@ namespace MyGame
         {
             this.useStyle = Item.UseStyle.Swing;
             this.holdStyle = Item.HoldStyle.Back;
+            this.clickType = Item.ClickType.Press;
+            
         }
         public override void OnUse(Character user)
         {
@@ -1865,7 +1952,7 @@ namespace MyGame
     public class UIObject : Object
     {
 
-
+        
         
         public int Width 
         {
@@ -1933,28 +2020,109 @@ namespace MyGame
         private float w;
         private float h;
 
+        private static Texture2D healthBar1 = null;
+        private static Texture2D healthBar2 = null;
+
         public HealthBar(float width = 100.0f, float height = 8.0f, float max = 100.0f, float min = 0.0f)
         {
-            if (AssetManager.LoadedTextures)
-            {
-                AssetManager.GetTexture("HealthBar1");
-                AssetManager.GetTexture("HealthBar2");
-            }
+            
             this.min = min;
             this.max = max;
             this.Max = max;
             w = width;
             h = height;
         }
+        static HealthBar()
+        {
+            if (AssetManager.LoadedTextures)
+            {
+                healthBar1 = AssetManager.GetTexture("HealthBar1");
+                healthBar2 = AssetManager.GetTexture("HealthBar2");
+            }
+        }
         public override void Update(GameTime gameTime)
         {
             float clmap = Math.Clamp(Value, Min, Max);
             float nromalize = (clmap - Min) / (Max - Min);
             percent = (int)(nromalize * 100);
-            Console.WriteLine(percent + " " + Value);
             base.Update(gameTime);
         }
-
+        public static void DrawHealthBar(
+            SpriteBatch spriteBatch,
+            float x, 
+            float y,
+            int w, 
+            int h,
+            float health,
+            float maxHealth,
+            ref float previousHealth,
+            ref float timer,
+            ref byte opacity,
+            ref bool startedCountingDown,
+            ref bool fading,
+            GameTime gameTime
+            )
+        {
+            if (health <= 0.0f)
+            {
+                return;
+            }
+            bool wasHit = health < previousHealth;
+            if (wasHit)
+            {
+                startedCountingDown = true;
+                fading = false;
+                opacity = 255;
+                timer = 5.0f;
+            }
+            if (startedCountingDown && !fading)
+            {
+                timer -= (float)gameTime.ElapsedGameTime.TotalSeconds;
+                if (timer <= 0)
+                {
+                    fading = true;
+                    startedCountingDown = false;
+                }    
+            }
+            
+            if (fading)
+            {
+                float alpha = (opacity / 255.0f);
+                alpha -= (float)gameTime.ElapsedGameTime.TotalSeconds;
+                if (alpha <= 0)
+                {
+                    alpha = 0.0f;
+                    opacity = (byte)0;
+                    fading = false;
+                }
+                else
+                {
+                    opacity = (byte)(alpha * 255.0f);
+                }
+            }
+            if (opacity <= 0)
+            {
+                opacity = 0;
+                fading = false;
+            }
+            if (opacity > 0)
+            {
+                float percentage = health / maxHealth;
+                if (percentage > 1.0f) percentage = 1.0f;
+                float r = 1.0f - percentage;
+                float g = percentage;
+                float alpha = opacity / 255.0f;
+                Color color1 = new Color(1.0f * alpha, 1.0f * alpha, 1.0f * alpha, alpha);
+                Color color2 = new Color(r * alpha, g * alpha, 0.0f, alpha);
+                int hBW = 16;
+                int hBH = 4;
+                Vector2 healthBarPos = new Vector2(x + (w / 2 - hBW / 2), y + (h + hBH));
+                Rectangle sourceRect = new Rectangle(0, 0, (int)(hBW * percentage), hBH);
+                spriteBatch.Draw(healthBar1, healthBarPos, null, color1, 0.0f, Vector2.Zero, Vector2.One, SpriteEffects.None, 0.01f);
+                spriteBatch.Draw(healthBar2, healthBarPos, sourceRect, color2, 0.0f, Vector2.Zero, Vector2.One, SpriteEffects.None, 0.0f);
+            }
+            previousHealth = health;
+        }
         public int ToPercent()
         {
             return percent;
@@ -1991,7 +2159,6 @@ namespace MyGame
             float nromalize = (clmap - Min) / (Max - Min);
             percent = (int)(nromalize * 100);
             Scale = new Vector2(nromalize * w, h);
-            Console.WriteLine(percent + " " + Value);
             base.Update(gameTime);
         }
 
@@ -2646,15 +2813,43 @@ namespace MyGame
         {
             get
             {
+                if (texture == null)
+                {
+                    if (this is Projectile)
+                    {
+                        return AssetManager.MissingTexture3;
+                    }
+                    else if (this is Character)
+                    {
+                        return AssetManager.MissingTexture5;
+                    }
+                }
                 return texture;
             }
             set
             {
                 if (value == null)
                 {
-                    throw new System.Exception("Failed to set Texture" + " " + this.GetType().Name);
+                    //throw new System.Exception("Failed to set Texture" + " " + this.GetType().Name);
+                    if (this is Projectile)
+                    {
+                        texture = AssetManager.MissingTexture3;
+                        return;
+                    }
+                    else if (this is Character)
+                    {
+                        texture = AssetManager.MissingTexture4;
+                        return;
+                    }
+                    else
+                    {
+                        texture = AssetManager.MissingTexture1;
+                        return;
+                    }
                 }
                 texture = value;
+                width = texture.Width;
+                height = texture.Height;
 
             }
         }
@@ -2669,15 +2864,22 @@ namespace MyGame
                 height = Texture.Bounds.Height;
                 return new Vector2(width, height);
             }
-            return Texture.Bounds.Size.ToVector2();
+            return new Vector2(width, height);
         }
-        public Vector2 TextureOffset { get { return textureOffset; } set { textureOffset = value; } }
-        private Vector2 textureOffset = Vector2.Zero;
+        protected void SetSize(int x, int y)
+        {
+            width = x;
+            height = y;
+        }
+        private int width;
+        private int height;
+        public Vector2 PositionOffset { get { return positionOffset; } set { positionOffset = value; } }
+        private Vector2 positionOffset = Vector2.Zero;
         public Vector2 Position { get { return position; } set { position = value; } }
         public Rectangle? SourceRectangle { get { return sourceRectangle; } set { sourceRectangle = value; } }
         public Color Color { get { return color; } set { color = value; } }
-        public float Rotation { get{ return rotation; } set { rotation = value; } }
-        public float RotationDegrees { get { return MathHelper.ToDegrees(rotation); } set { rotation = MathHelper.ToRadians(value); } }
+        public float Rotation { get{ return rotation; } set { rotation = MathHelper.WrapAngle(value); } }
+        public float RotationDegrees { get { return MathHelper.ToDegrees(Rotation); } set { Rotation = MathHelper.ToRadians(value); } }
 
 
         public Vector2 Origin { get { return origin; } set { origin = value; } }
@@ -2732,6 +2934,28 @@ namespace MyGame
         public static bool LoadedTextures { get { return loadedTextures; } }
         private static bool loadedTextures = false;
         private static Dictionary<String, Texture2D> textures = new Dictionary<string, Texture2D>();
+
+
+        public static Texture2D MissingTexture1 = null;
+        public static Texture2D MissingTexture2 = null;
+        public static Texture2D MissingTexture3 = null;
+        public static Texture2D MissingTexture4 = null;
+        public static Texture2D MissingTexture5 = null;
+        public static Texture2D MissingTexture6 = null;
+
+
+        static AssetManager()
+        {
+            if (loadedTextures)
+            {
+                MissingTexture1 = GetTexture("MissingTexture1");
+                MissingTexture2 = GetTexture("MissingTexture2");
+                MissingTexture3 = GetTexture("MissingTexture3");
+                MissingTexture4 = GetTexture("MissingTexture4");
+                MissingTexture5 = GetTexture("MissingTexture5");
+                MissingTexture6 = GetTexture("MissingTexture6");
+            }
+        }
         public static Dictionary<String, Texture2D> GetTextures()
         {
             return textures;
@@ -2739,11 +2963,13 @@ namespace MyGame
         public static Texture2D GetTexture(string name)
         {
             textures.TryGetValue(name, out var texture);
-
+            /*
             if (texture == null)
             {
-                throw new System.Exception("Failed to get texture!");
+                return MissingTexture2;
+                //throw new System.Exception("Failed to get texture!");
             }
+            */
             return texture;
         }
         public static void LoadTextures(ContentManager contentManager, string path = "Content/Assets/Textures")
@@ -2835,6 +3061,11 @@ namespace MyGame
         private static bool shouldExit = false;
         private static GameObject currentObjectInCursor = null;
 
+
+
+        public static Vector2 screenSize;
+
+
         public Main()
         {
             Console.WriteLine("Start of Main Construction");
@@ -2842,7 +3073,7 @@ namespace MyGame
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
             graphics.SynchronizeWithVerticalRetrace = false;
-            IsFixedTimeStep = true;
+            IsFixedTimeStep = false;
             //graphics.IsFullScreen = true;
             //graphics.HardwareModeSwitch = false;
 
@@ -2868,6 +3099,7 @@ namespace MyGame
         protected override void Initialize()
         {
             Console.WriteLine("Start of Initialization");
+            screenSize = new Vector2(graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight);
             rand = new Random(67);
             quadTree = new QuadTree(0, new Rectangle(-UInt16.MaxValue, -UInt16.MaxValue, UInt16.MaxValue*2, UInt16.MaxValue*2));
             pixel = new Texture2D(GraphicsDevice, 1, 1);
@@ -2886,7 +3118,7 @@ namespace MyGame
             base.Initialize();
         }
 
-        protected override void LoadContent()
+        protected override void LoadContent()    
         {
             Console.WriteLine("Start of Loading Content");
             spriteBatch = new SpriteBatch(GraphicsDevice);
@@ -2907,8 +3139,8 @@ namespace MyGame
             catch (Exception e) { Console.WriteLine(e); }
             player.LayerDepth = 0.01f;
             button.Texture = CreateRectangleTexture(button.Width, button.Height);
-            enemy = new Enemy1(AssetManager.GetTexture("Reference"), new Vector2(420, 420), UInt16.MaxValue);
-            objects.Add(enemy);
+            enemy = new Enemy1(AssetManager.GetTexture("Reference"), new Vector2(128, 128), UInt16.MaxValue);
+            objects.Add(enemy); 
             World.CreateWorld();
             objects.Add(player);
             objects.Add(button);
@@ -2921,7 +3153,7 @@ namespace MyGame
         {
             //float rot = test.Rotation % 360.0f;
             test.RotationDegrees += 100.0f * (float)gameTime.ElapsedGameTime.TotalSeconds;
-            
+            screenSize = new Vector2(graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight);
             if (!this.IsActive) return;
             objectsToDraw.Clear();
             // process inputs -> process behaviors -> calculate velocities -> move entities -> resolve collisions -> render frame  
@@ -2966,6 +3198,10 @@ namespace MyGame
                         gameObject.Color = Color.White;
                     }
 
+                }
+                if (obj is Character character)
+                {
+                    character.PreviousHealth = character.Health;
                 }
                 if (obj is PhysicsObject)
                 {
@@ -3262,8 +3498,11 @@ namespace MyGame
         private int virtualHeight = 360;
         private float time = 0.0f;
         private int fps = 0;
+        private bool gameObjectsHidden = false;
         protected override void Draw(GameTime gameTime)
         {
+            if (Input.IsKeyPressed(Keys.F12))
+                gameObjectsHidden = !gameObjectsHidden;
             GraphicsDevice.Clear(Color.Black);
             // TODO: Add your drawing code here
             Matrix transform = Matrix.CreateTranslation(-(float)Math.Round(camera.GetTopLeft().X), -(float)Math.Round(camera.GetTopLeft().Y), 0);//* Matrix.CreateScale(0.5f);
@@ -3295,34 +3534,48 @@ namespace MyGame
 
             foreach (GameObject obj in objectsToDraw.OfType<GameObject>())
             {
-                obj.Draw(spriteBatch, gameTime);
-                if (obj.Hidden || obj.Texture == null) { continue; }
+                if (!gameObjectsHidden)
+                {
+                    obj.Draw(spriteBatch, gameTime);
 
-                
-                spriteBatch.Draw(
-                    obj.Texture,
-                    obj.Position + obj.TextureOffset,
-                    obj.SourceRectangle,
-                    obj.Color,
-                    obj.Rotation,
-                    obj.Origin,
-                    obj.Scale,
-                    obj.Effects,
-                    obj.LayerDepth
-                    );
-                
+                    if (obj is Character character)
+                    {
+                        if (!player.UIHidden)
+                        {
+                            float previousHealth = character.PreviousHealth;
+                            HealthBar.DrawHealthBar(spriteBatch, character.Position.X, character.Position.Y, (int)character.GetSize().X, (int)character.GetSize().Y, character.Health, character.MaxHealth, ref previousHealth, ref character.healthBarTimer, ref character.healthBarOpacity, ref character.healthBarStartedCountingDown, ref character.healthBarFading, gameTime);
+                            character.PreviousHealth = previousHealth;
+
+                        }
+                    }
+                    if (obj.Hidden || obj.Texture == null) { continue; }
+
+
+                    spriteBatch.Draw(
+                        obj.Texture,
+                        obj.Position + obj.PositionOffset,
+                        obj.SourceRectangle,
+                        obj.Color,
+                        obj.Rotation,
+                        obj.Origin,
+                        obj.Scale,
+                        obj.Effects,
+                        obj.LayerDepth
+                        );
+
+                }
             }
             
-            DrawColliders(spriteBatch);
+            //DrawColliders(spriteBatch);
             CombatText.DrawTexts(spriteBatch, spriteFont, gameTime);
             spriteBatch.End();
 
 
-
+            /*
             spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.Opaque, SamplerState.PointWrap, null, null, null, transform);
             quadTree.DrawRectangleOutline(spriteBatch, Color.Red);
             spriteBatch.End();
-
+            */
             if (!player.UIHidden)
             {
 
