@@ -480,334 +480,6 @@ namespace MyGame
 
 
 
-    public class Enemy1 : Enemy
-    {
-        // AI arrays (like Terrarian ai[] / localAI[])
-        public float[] ai = new float[4];       // ai[0] = state index; ai[2] = state timer (frames-like)
-        public float[] newAI = new float[4];    // spare flags (used for "tired" etc.)
-        public float rotation = 0f;
-        public int spriteDirection = 1;
-
-        // visual / behaviour helpers
-        private float afterimageTimer = 0f; // used by certain states
-        private float lastBlobSpawn = 0f;
-
-        public Enemy1(Texture2D texture, Vector2 position, float health = 255.0f) : base(health)
-        {
-            this.AffectedByGravity = false;
-            this.Health = health;
-            this.MaxHealth = health;
-            this.Texture = texture;
-            this.Position = position;
-            this.Rectangle = new Rectangle(position.ToPoint(), new Point(150 / 10, 100 / 10)); // scaled down approximated size
-            // initialize ai similarly to OldDuke defaults
-            ai[0] = 0f;
-            ai[1] = 0f;
-            ai[2] = 0f;
-            ai[3] = 0f;
-        }
-
-        public override void Update(GameTime gameTime)
-        {
-            // call the OldDuke AI routine (faithful state machine recreation)
-            OldDukeAI.VanillaOldDukeAI(this, gameTime);
-
-            // update rotation & sprite direction to mirror visual intent
-            if (Velocity.X > 0.01f) spriteDirection = 1;
-            else if (Velocity.X < -0.01f) spriteDirection = -1;
-
-            if (Velocity.LengthSquared() > 0.001f)
-            {
-                rotation = (float)Math.Atan2(Velocity.Y, Velocity.X);
-            }
-
-            base.Update(gameTime);
-        }
-
-        // keep your damage text behavior
-        public override void Damage(float value)
-        {
-            CombatText combatText = new CombatText(this, (int)value);
-            base.Damage(value);
-        }
-    }
-
-    // --- The OldDuke AI translated into your framework ---
-
-    public static class OldDukeAI
-    {
-        // Constants to make the AI easier to read (mapping to original ai values)
-        private const int STATE_IDLECYCLE_A = 0; // 0 / 5 / 10 / 12 family (patrol / wind-up)
-        private const int STATE_WINDUP = 1;      // short wind-up (a lunge / attack prep)
-        private const int STATE_VOMIT = 2;       // vomit acid volley
-        private const int STATE_AFTERIMAGE = 3;  // dash/afterimage movement
-        private const int STATE_CHARGEUP = 4;    // big charged attack (radial vomit)
-        // original used sequences repeating with offset+5 etc; we cycle between them
-
-        // call this each Update
-        public static void VanillaOldDukeAI(Enemy1 npc, GameTime gameTime)
-        {
-            // guard: need a player reference
-            Player player = Main.player; // your project appears to store a global player reference like this
-            if (player == null) return;
-
-            float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
-            // emulate original frame-counting (original used integer frames). Use 60fps-equivalent counter:
-            npc.ai[2] += dt * 60f; // ai[2] acts like frame timer
-
-            int state = (int)npc.ai[0];
-
-            // helper: distance and direction to player
-            Vector2 toPlayer = (player.Position - npc.Position);
-            float distanceToPlayer = toPlayer.Length();
-            Vector2 dirToPlayer = distanceToPlayer > 0.01f ? Vector2.Normalize(toPlayer) : Vector2.UnitX;
-
-            // base move damp
-            float baseMoveSpeed = 80f;
-
-            // per-state behavior
-            switch (state)
-            {
-                //
-                // STATE 0 family: roaming/idle with mild pursuit; after some time, transition to windup (1)
-                //
-                case STATE_IDLECYCLE_A:
-                    {
-                        // slow approach / idle
-                        if (distanceToPlayer > 10f)
-                        {
-                            // move horizontally toward player, keep vertical drift small
-                            float vx = MathHelper.Lerp(npc.Velocity.X, dirToPlayer.X * baseMoveSpeed, 0.02f);
-                            npc.Velocity = new Vector2(vx, npc.Velocity.Y);
-                        }
-                        else
-                        {
-                            npc.Velocity *= 0.9f;
-                        }
-
-                        // occasionally pick next state
-                        if (npc.ai[2] > 180f) // ~3 seconds
-                        {
-                            npc.ai[2] = 0f;
-                            npc.ai[0] = STATE_WINDUP;
-                        }
-                    }
-                    break;
-
-                //
-                // STATE 1 family: wind-up and lunge (short telegraphed charge)
-                //
-                case STATE_WINDUP:
-                    {
-                        // telegraph: pause for a short time then lunge
-                        if (npc.ai[2] < 20f)
-                        {
-                            // huff: stationary, slight breathing
-                            npc.Velocity *= 0.8f;
-                        }
-                        else if (npc.ai[2] < 40f)
-                        {
-                            // sprint toward the player (fast burst)
-                            npc.Velocity = dirToPlayer * (baseMoveSpeed * 8f) * dt;
-                        }
-                        else
-                        {
-                            // return to idle but often go to vomit (acid volley)
-                            npc.ai[2] = 0f;
-                            npc.ai[0] = STATE_VOMIT;
-                        }
-                    }
-                    break;
-
-                //
-                // STATE 2 family: vomit acid volley (this replaces Terraria projectile with AcidBlob)
-                //
-                case STATE_VOMIT:
-                    {
-                        // play a sequence of small volleys aimed toward the player, and a slight backward recoil
-                        float volleyDuration = 120f; // frames
-                        // spawn timing: every ~12 frames
-                        if (npc.ai[2] > 8f && npc.ai[2] - dt * 60f <= 8f) { /* first tick */ }
-                        // spawn bursts
-                        if (npc.ai[2] > 0f && npc.ai[2] <= volleyDuration)
-                        {
-                            // spawn in intervals
-                            if (npc.ai[3] <= 0f) npc.ai[3] = 0f;
-                            npc.ai[3] += dt * 60f;
-                            if (npc.ai[3] >= 12f)
-                            {
-                                npc.ai[3] = 0f;
-                                // spawn an AcidBlob that arcs / travels toward the player with inaccuracy
-                                Vector2 spawnPos = npc.Position + new Vector2(0f, -10f);
-                                // apply small spread
-                                float spread = MathHelper.ToRadians((float)Main.rand.Next(-12, 12));
-                                float angle = (float)Math.Atan2(dirToPlayer.Y, dirToPlayer.X) + spread;
-                                Vector2 vel = Vector2.Transform(new Vector2(600f, 0f), Matrix.CreateRotationZ(angle));
-                                var blob = new AcidBlob(npc, spawnPos, vel);
-                                Main.AddObject(blob);
-                                // no sound (null)
-                            }
-                        }
-
-                        // after volley ends, decide next stage: dash/afterimage or charge
-                        if (npc.ai[2] > volleyDuration)
-                        {
-                            npc.ai[2] = 0f;
-                            // 50% chance to go to afterimage dash or to charge attack
-                            if (Main.rand.NextDouble() < 0.5) npc.ai[0] = STATE_AFTERIMAGE;
-                            else npc.ai[0] = STATE_CHARGEUP;
-                            npc.ai[3] = 0f;
-                        }
-                    }
-                    break;
-
-                //
-                // STATE 3 family: dash/afterimage (fast multi-dash toward player)
-                //
-                case STATE_AFTERIMAGE:
-                    {
-                        // do a sequence of quick dashes with short invulnerability-style movement
-                        // use ai[3] as dash step counter
-                        float dashTotal = 90f;
-                        float dashStepDuration = 18f;
-                        if (npc.ai[2] % dashStepDuration < 1f && npc.ai[3] <= 0f)
-                        {
-                            // initiate a dash
-                            npc.ai[3] = dashStepDuration; // lock step
-                            Vector2 dashVel = dirToPlayer * 2200f * dt;
-                            npc.Velocity = dashVel;
-                            // create 2-3 short-lived AcidBlobs spawned perpendicular as 'afterimage spit' (optional)
-                            for (int i = -1; i <= 1; ++i)
-                            {
-                                float spread = MathHelper.ToRadians(i * 18f);
-                                Vector2 v = Vector2.Transform(dirToPlayer * 420f, Matrix.CreateRotationZ(spread));
-                                var b = new AcidBlob(npc, npc.Position + dirToPlayer * 8f, v);
-                                Main.AddObject(b);
-                            }
-                        }
-
-                        if (npc.ai[3] > 0f) npc.ai[3] -= dt * 60f;
-                        // slow down gradually
-                        npc.Velocity *= 0.96f;
-
-                        if (npc.ai[2] > dashTotal)
-                        {
-                            npc.ai[2] = 0f;
-                            npc.ai[0] = STATE_IDLECYCLE_A; // go back to idle/patrol
-                        }
-                    }
-                    break;
-
-                //
-                // STATE 4 family: charged radial vomit (big attack)
-                //
-                case STATE_CHARGEUP:
-                    {
-                        // charge up for a big radial burst around the boss
-                        float chargeTime = 80f;
-                        if (npc.ai[2] < chargeTime)
-                        {
-                            // slow and spin slightly
-                            npc.Velocity *= 0.9f;
-                            npc.rotation += 0.02f;
-                        }
-                        else
-                        {
-                            // on release spawn a radial burst of AcidBlobs (replace original projectile barrage)
-                            int shards = 10;
-                            for (int i = 0; i < shards; ++i)
-                            {
-                                float randomFloat = (float)(Main.rand.Next(-1, 1)) / 10;
-                                float ang = MathHelper.TwoPi * i / (float)shards + randomFloat;
-                                Vector2 vel = new Vector2((float)Math.Cos(ang), (float)Math.Sin(ang)) * 420f;
-                                var b = new AcidBlob(npc, npc.Position, vel);
-                                Main.AddObject(b);
-                            }
-                            // no sound
-                            npc.ai[2] = 0f;
-                            npc.ai[0] = STATE_IDLECYCLE_A;
-                        }
-                    }
-                    break;
-
-                default:
-                    {
-                        // if unknown state, reset
-                        npc.ai[0] = 0f;
-                        npc.ai[2] = 0f;
-                    }
-                    break;
-            }
-
-            // apply gravity-like behaviour if desired (OldDuke was flying; keep no gravity)
-            // Clamp speeds so boss doesn't rocket off-screen
-            if (npc.Velocity.Length() > 1200f)
-            {
-                npc.Velocity = Vector2.Normalize(npc.Velocity) * 1200f;
-            }
-        }
-    }
-
-    // --- AcidBlob: replaces the Calamity projectile the boss would spawn ---
-    // Reuses your Projectile base so collision uses your existing system,
-    // but it's a visually different "vomit blob" with a short arcing life.
-    public class AcidBlob : Projectile
-    {
-        public AcidBlob(ColliderObject whoShot, Vector2 position, Vector2 velocity) : base()
-        {
-            this.WhoShotTheProjectile = whoShot;
-            this.CanCollideWithTiles = true;
-            this.Damage = 420;
-            this.AffectedByGravity = false;
-            this.Position = position;
-            this.Velocity = velocity;
-            this.Rectangle = new Rectangle(0, 0, 8, 8);
-            this.Origin = new Vector2(4f, 4f);
-            this.LifeTime = 100.0f; // 3 seconds
-            // If you have an acid texture, use it; otherwise leave null-safe (wrap in try)
-            try
-            {
-                if (AssetManager.LoadedTextures)
-                {
-                    this.Texture = AssetManager.GetTexture("Reference");
-                }
-            }
-            catch
-            {
-                // texture optional
-            }
-        }
-
-        public override void Update(GameTime gameTime)
-        {
-            // simple drag / slight gravity so blobs arc
-            float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
-            Velocity += new Vector2(0f, 300f) * dt * 0.25f; // light gravity
-            Velocity *= 0.995f; // small drag
-
-            // rotate to match travel direction for nicer visuals
-            this.Rotation = (float)Math.Atan2(Velocity.Y, Velocity.X);
-
-            base.Update(gameTime);
-        }
-
-        public override void OnCollide(ColliderObject otherCollider)
-        {
-            // Deal small acid damage if hits a character (not the shooter)
-            
-
-            // create a small linger effect: spawn a short-lived "Acid Puddle" collider?
-            // skip for now; simply destroy the blob
-            base.OnCollide(otherCollider);
-        }
-    }
-
-
-
-
-
-
-
 
 
     public class AI
@@ -816,7 +488,7 @@ namespace MyGame
     }
 
 
-    /*
+    
     public class Enemy1 : Enemy
     {
         public Enemy1(Texture2D texture, Vector2 position, float health = UInt16.MaxValue) : base(health)
@@ -825,17 +497,37 @@ namespace MyGame
             this.MaxHealth = health;
             this.Texture = texture;
             this.Position = position;
-            this.Rectangle = new Rectangle(position.ToPoint(), new Point(16, 32));
+            this.Rectangle = new Rectangle(Point.Zero, new Point(16, 32));
         }
         public override void Damage(float value)
         {
-            CombatText combatText = new CombatText(this, (int)value);
             base.Damage(value);
         }
+        public override void Update(GameTime gameTime)
+        {
+            base.Update(gameTime);
+        }
     }
-    */
+    
     public class Enemy : Character
     {
+        public override void Update(GameTime gameTime)
+        {
+            base.Update(gameTime);
+        }
+        public override void OnCollide(ColliderObject otherCollider)
+        {
+            if (otherCollider == this)
+            {
+                return;
+            }
+
+            if (otherCollider is Character character)
+            {
+                character.Damage(ContactDamage);
+            }
+            base.OnCollide(otherCollider);
+        }
         public Enemy(float health) : base(health)
         {
             this.MaxHealth = health;
@@ -848,6 +540,9 @@ namespace MyGame
 
         public float MaxHealth { get { return maxHealth; } set { maxHealth = value; } }
         private float maxHealth = 100.0f;
+
+        public int ContactDamage { get { return contactDamage; } set { contactDamage = value; } }
+        private int contactDamage = 67;
 
         public bool Invisible { get { return invisible; } set { invisible = value; } }
         private bool invisible = false;
@@ -867,10 +562,9 @@ namespace MyGame
         }
         private int direction = 1;
 
-        public Character(float health)
+        public Character(float health) : this()
         {
             this.MaxHealth = health;
-            progressBar = new ProgressBar(Main.pixel, max: health);
         }
         public Character()
         {
@@ -1242,7 +936,6 @@ namespace MyGame
         public override void Update(GameTime gameTime)
         {
             //Console.WriteLine(Projectile.projectileCount);
-
             UpdateMusic(gameTime);
             if (Input.IsKeyPressed(Keys.F11)) uiHidden = !uiHidden;
 
@@ -1893,7 +1586,7 @@ namespace MyGame
             this.Rectangle = new Rectangle(0, 0, 2, 2);
             //RectangleOffset = new Vector2(4, 0);
             baseRectangleOffset = new Vector2(GetSize().X / 2.0f , 0f);
-
+                
             this.WhoShotTheProjectile = whoShotTheProjectile;
         }   
         public override void Update(GameTime gameTime)
@@ -2700,7 +2393,7 @@ namespace MyGame
             {
                 for (int y = 100; y < World.tiles.GetLength(1); ++y)
                 {
-                    tiles[x, y] = new Tile((Tile.TileType)1, x, y);
+                    tiles[x, y] = new Tile((Tile.TileType)Main.rand.Next(1, 2), x, y);
                 }
             }
         }
@@ -2760,6 +2453,12 @@ namespace MyGame
                     obj.Position = new Vector2((leftTile + 1) * 8 - obj.RectangleOffset.X, obj.Position.Y);
                 }
             }
+            else
+            {
+                Tile tile = World.tiles[Math.Min(World.tiles.GetLength(0) - 1, (uint)position.X / 8), Math.Min(World.tiles.GetLength(1) - 1, (uint)position.Y / 8)];
+                obj.OnTileCollide(tile);
+
+            }
 
             Vector2 currentPos = obj.Position + obj.RectangleOffset;
             Vector2 nextPosY = position + new Vector2(0, velocity.Y * (float)gameTime.ElapsedGameTime.TotalSeconds);
@@ -2783,19 +2482,28 @@ namespace MyGame
             }
             else
             {
+
                 Vector2 groundPos = currentPos + new Vector2(0, 1);
                 if (!CheckCollisionAtPosition(groundPos, w, h))
                 {
                     obj.OnFloor = false;
+                    Console.WriteLine("nuh");
+                }
+                else
+                {
+                    Tile tile = World.tiles[Math.Min(World.tiles.GetLength(0) - 1, (int)groundPos.X / 8), Math.Min(World.tiles.GetLength(1) - 1, (int)groundPos.Y / 8)];
+                    obj.OnTileCollide(tile);
+                    Console.WriteLine("yuh");
                 }
             }
-
+            /*
             Vector2 groundPosition = currentPos + new Vector2(0, 1);
             if (CheckCollisionAtPosition(groundPosition, w, h))
             {
                 Tile tile = World.tiles[Math.Min(World.tiles.GetLength(0) - 1, (int)groundPosition.X/8), Math.Min(World.tiles.GetLength(1) - 1, (int)groundPosition.Y/8)];
                 obj.OnTileCollide(tile);
             }
+            */
             return newVelocity;
         }
 
@@ -3136,7 +2844,7 @@ namespace MyGame
             player.LayerDepth = 0.01f;
             button.Texture = CreateRectangleTexture(button.Width, button.Height);
             enemy = new Enemy1(AssetManager.GetTexture("Reference"), new Vector2(420, 420), UInt16.MaxValue);
-            AddObject(enemy);
+            objects.Add(enemy);
             World.CreateWorld();
             objects.Add(player);
             objects.Add(button);
@@ -3179,7 +2887,7 @@ namespace MyGame
             foreach (var obj in objects.ToList())
             {
                 obj.Update(gameTime);
-                Rectangle cursorRectangle = new Rectangle((int)Input.MousePosition.X, (int)Input.MousePosition.Y, 1, 1);
+                Rectangle cursorRectangle = new Rectangle((int)Input.MousePosition.X + (int)camera.GetTopLeft().X, (int)Input.MousePosition.Y + (int)camera.GetTopLeft().Y, 1, 1);
                 if (obj is GameObject)
                 {
                     GameObject gameObject = (GameObject)obj;
@@ -3187,6 +2895,11 @@ namespace MyGame
                     {
                         gameObject.OnHover();
                         currentObjectInCursor = gameObject;
+                        currentObjectInCursor.Color = Color.Yellow;
+                    }
+                    else
+                    {
+                        gameObject.Color = Color.White;
                     }
 
                 }
@@ -3463,7 +3176,7 @@ namespace MyGame
                     }
                 }
             }
-
+            
             //camera.MoveToward(cameraPos + new Vector2(16, 16), (float)gameTime.ElapsedGameTime.TotalMilliseconds, 1.0f);
             
             Animation.UpdateAnimations(gameTime);
@@ -3597,7 +3310,7 @@ namespace MyGame
                 if (time >= 1.0f)
                 {
                     fps = (int)(1.0f / (float)gameTime.ElapsedGameTime.TotalSeconds);
-                    progressBar.Value = fps / 60;
+                    progressBar.Value = (fps / 60) * 100;
                     time = 0.0f;
                 }
 
