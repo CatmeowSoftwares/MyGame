@@ -491,14 +491,16 @@ namespace MyGame
     
     public class Enemy1 : Enemy
     {
-        public Enemy1(Texture2D texture, Vector2 position, float health = UInt16.MaxValue) : base(health)
+        public Enemy1(Texture2D texture, Vector2 position, float health) : this(health, position)
         {
-            this.Health = health;
-            this.MaxHealth = health;
             this.Texture = texture;
-            this.Position = position;
-            this.Rectangle = new Rectangle(Point.Zero, new Point(16, 32));
         }
+        public Enemy1(float health, Vector2? position = null, Vector2? velocity = null) : base(health, position, velocity)
+        {
+            this.Rectangle = new Rectangle(Point.Zero, new Point(16, 32));
+
+        }
+        
         public override void Damage(float value)
         {
             base.Damage(value);
@@ -528,6 +530,8 @@ namespace MyGame
             }
             base.OnCollide(otherCollider);
         }
+        public Enemy(float health, Vector2? position = null, Vector2? velocity = null) : base(health, position, velocity)
+        { }
         public Enemy(float health) : base(health)
         {
             this.MaxHealth = health;
@@ -562,20 +566,19 @@ namespace MyGame
         }
         private int direction = 1;
 
-        public Character(float health) : this()
+        public Character(float health, Vector2? position = null, Vector2? velocity = null)
         {
+            this.Position = position ?? Vector2.Zero;
+            this.Velocity = velocity ?? Vector2.Zero;
+            this.Health = health;
             this.MaxHealth = health;
-        }
-        public Character()
-        {
-            this.MaxHealth = Health;
             progressBar = new ProgressBar(Main.pixel, max: MaxHealth);
-
         }
+ 
         public override void Update(GameTime gameTime)
         {
             progressBar.Position = Position;
-            progressBar.Value = health;
+            progressBar.Value = Health;
             progressBar.Update(gameTime);
             base.Update(gameTime);
         }
@@ -760,7 +763,10 @@ namespace MyGame
         }
         private string name = "";
 
+        public Player(float health) : base(health)
+        {
 
+        }
 
         
         public float MoveSpeed { get { return moveSpeed; } set { moveSpeed = value; } } 
@@ -851,8 +857,6 @@ namespace MyGame
         }
         public void LoadContent(ContentManager content)
         {
-            this.Health = float.MaxValue;
-            this.MaxHealth = Health;
             isMale = false;
             if (isMale)
             {
@@ -892,10 +896,8 @@ namespace MyGame
             torso.Animation = new Animation(torso);
 
 
-            reference = new Character();
-            reference.Position = new Vector2(67, 67);
+            reference = new Character(UInt16.MaxValue, new Vector2(420, 420));
             reference.Rectangle = new Rectangle(67, 67, 16, 32);
-            //reference.Position = this.Position;
             reference.Texture = AssetManager.GetTexture("Reference");
             reference.Animation = new Animation(reference);
             Main.AddObject(reference);
@@ -1134,7 +1136,6 @@ namespace MyGame
             if (currentlyHeldItem != null)
             {
                 currentlyHeldItem.Position = Position + new Vector2(16, 12);
-                currentlyHeldItem.Effects = (Direction == -1) ? SpriteEffects.FlipVertically : SpriteEffects.None;
                 aiming = currentlyHeldItem.holdStyle == Item.HoldStyle.Aim;
                 if (Direction == 1)
                 {
@@ -1157,7 +1158,13 @@ namespace MyGame
                 }
                 else if (currentlyHeldItem.holdStyle == Item.HoldStyle.Aim)
                 {
-
+                    currentlyHeldItem.Effects = (Direction == -1) ? SpriteEffects.FlipVertically : SpriteEffects.None;
+                }
+                else if (currentlyHeldItem.holdStyle == Item.HoldStyle.Back)
+                {
+                    currentlyHeldItem.TextureOffset = new Vector2(-12, -12);
+                    currentlyHeldItem.Effects = (Direction == 1) ? SpriteEffects.FlipVertically : SpriteEffects.FlipHorizontally | SpriteEffects.FlipVertically;
+                    currentlyHeldItem.LayerDepth = 1.0f;
                 }
 
 
@@ -1203,7 +1210,6 @@ namespace MyGame
                 
                 if (currentlyHeldItem != null)
                 {
-                    currentlyHeldItem.LayerDepth = 0.15f;
                     if (currentlyHeldItem.holdStyle == Item.HoldStyle.Aim)
                     {
                         if (aiming)
@@ -1229,15 +1235,14 @@ namespace MyGame
             else if (Direction == -1)
             {
                 head.LayerDepth = 0.15f;
-                leftHand.LayerDepth = 0.2f;
-                rightHand.LayerDepth = 0.15f;
+                leftHand.LayerDepth = 0.1f;
+                rightHand.LayerDepth = 0.2f;
                 torso.LayerDepth = 0.15f;
                 legs.LayerDepth = 0.15f;
 
 
                 if (currentlyHeldItem != null)
                 {
-                    currentlyHeldItem.LayerDepth = 0.1f;
                     if (currentlyHeldItem.holdStyle == Item.HoldStyle.Aim)
                     {
                         if (aiming)
@@ -1313,7 +1318,7 @@ namespace MyGame
             {
                 spriteBatch.Draw(
                         currentlyHeldItem.Texture,
-                        currentlyHeldItem.Position,
+                        currentlyHeldItem.Position + currentlyHeldItem.TextureOffset,
                         currentlyHeldItem.SourceRectangle,
                         currentlyHeldItem.Color,
                         currentlyHeldItem.Rotation,
@@ -1609,6 +1614,7 @@ namespace MyGame
         public static int projectileCount = 0;
         public int Damage { get { return damage; }set { damage = value; } }
         private int damage = 67;
+        protected int piercingCount = 0;
         public Projectile() :base()
         {
             this.CanCollideWithTiles = false;
@@ -1649,7 +1655,7 @@ namespace MyGame
         }
         public override void OnCollide(ColliderObject otherCollider)
         {
-            Console.WriteLine(this.GetType().Name);
+            bool collided = false;
             if (destroyed) return;
             if (otherCollider == whoShotTheProjectile)
             {
@@ -1662,10 +1668,11 @@ namespace MyGame
             }*/
             if (otherCollider is Character character)
             {
-                character.Damage((float)damage);
-                Destroy();
+                character.Damage((float)Damage);
+                collided = true;
             }
-
+            --piercingCount;
+            if (collided && piercingCount < 0) Destroy();
             //Destroy();
             base.OnCollide(otherCollider);
         }
@@ -1675,13 +1682,14 @@ namespace MyGame
     {
         public override string name => "Sword";
         protected override string texturePath => "Sword";
-        public Sword()
+        public Sword() : base()
         {
             if (AssetManager.LoadedTextures)
             {
                 icon = AssetManager.GetTexture("SwordIcon");
                 Texture = AssetManager.GetTexture("Sword");
             }
+
         }
     }
     public class Pistol : BaseGun
@@ -1710,6 +1718,16 @@ namespace MyGame
 
     public abstract class BaseSword : Item
     {
+        public BaseSword()
+        {
+            this.useStyle = Item.UseStyle.Swing;
+            this.holdStyle = Item.HoldStyle.Back;
+        }
+        public override void OnUse(Character user)
+        {
+            RotationDegrees = 90.0f;
+            base.OnUse(user);
+        }
     }
 
     public abstract class BaseGun : Item
@@ -1779,6 +1797,7 @@ namespace MyGame
         {
             None,
             Aim,
+            Swing,
         }
 
         public enum HoldStyle
@@ -1786,6 +1805,7 @@ namespace MyGame
             None,
             Front,
             Aim,
+            Back,
         }
 
 
@@ -1897,7 +1917,49 @@ namespace MyGame
 
     }
 
+    public class HealthBar : UIObject
+    {
+        public float Min { get { return min; } set { min = value; } }
+        public float Max { get { return max; } set { max = value; } }
+        public float Value { get { return current_value; } set { current_value = value; } }
 
+        public int Percent { get { return percent; } set { percent = value; } }
+
+        private float min = 0.0f;
+        private float max = 100.0f;
+        private float current_value = 0.0f;
+        private int percent;
+
+        private float w;
+        private float h;
+
+        public HealthBar(float width = 100.0f, float height = 8.0f, float max = 100.0f, float min = 0.0f)
+        {
+            if (AssetManager.LoadedTextures)
+            {
+                AssetManager.GetTexture("HealthBar1");
+                AssetManager.GetTexture("HealthBar2");
+            }
+            this.min = min;
+            this.max = max;
+            this.Max = max;
+            w = width;
+            h = height;
+        }
+        public override void Update(GameTime gameTime)
+        {
+            float clmap = Math.Clamp(Value, Min, Max);
+            float nromalize = (clmap - Min) / (Max - Min);
+            percent = (int)(nromalize * 100);
+            Console.WriteLine(percent + " " + Value);
+            base.Update(gameTime);
+        }
+
+        public int ToPercent()
+        {
+            return percent;
+        }
+    }
     public class ProgressBar : UIObject
     {
         public float Min { get { return min; } set { min = value; } }
@@ -1914,11 +1976,12 @@ namespace MyGame
         private float w;
         private float h;
 
-        public ProgressBar(Texture2D texture,float width = 100.0f, float height = 8.0f, float min = 0.0f, float max = 100.0f)
+        public ProgressBar(Texture2D texture,float width = 100.0f, float height = 8.0f, float max = 100.0f, float min = 0.0f)
         {
             Texture = texture;
             this.min = min;
             this.max = max;
+            this.Max = max;
             w = width;
             h = height;
         }
@@ -1926,8 +1989,9 @@ namespace MyGame
         {
             float clmap = Math.Clamp(Value, Min, Max);
             float nromalize = (clmap - Min) / (Max - Min);
-            percent = (int)nromalize * 100;
+            percent = (int)(nromalize * 100);
             Scale = new Vector2(nromalize * w, h);
+            Console.WriteLine(percent + " " + Value);
             base.Update(gameTime);
         }
 
@@ -2487,13 +2551,11 @@ namespace MyGame
                 if (!CheckCollisionAtPosition(groundPos, w, h))
                 {
                     obj.OnFloor = false;
-                    Console.WriteLine("nuh");
                 }
                 else
                 {
                     Tile tile = World.tiles[Math.Min(World.tiles.GetLength(0) - 1, (int)groundPos.X / 8), Math.Min(World.tiles.GetLength(1) - 1, (int)groundPos.Y / 8)];
                     obj.OnTileCollide(tile);
-                    Console.WriteLine("yuh");
                 }
             }
             /*
@@ -2609,6 +2671,8 @@ namespace MyGame
             }
             return Texture.Bounds.Size.ToVector2();
         }
+        public Vector2 TextureOffset { get { return textureOffset; } set { textureOffset = value; } }
+        private Vector2 textureOffset = Vector2.Zero;
         public Vector2 Position { get { return position; } set { position = value; } }
         public Rectangle? SourceRectangle { get { return sourceRectangle; } set { sourceRectangle = value; } }
         public Color Color { get { return color; } set { color = value; } }
@@ -2809,7 +2873,7 @@ namespace MyGame
             pixel = new Texture2D(GraphicsDevice, 1, 1);
             pixel.SetData(new Color[] { Color.White });
             test = new GameObject();
-            player = new Player();
+            player = new Player(UInt16.MaxValue);
             player.Initialize();
             button = new Button();
             button.Position = new Vector2(100.0f, 100.0f);
@@ -3203,7 +3267,7 @@ namespace MyGame
             GraphicsDevice.Clear(Color.Black);
             // TODO: Add your drawing code here
             Matrix transform = Matrix.CreateTranslation(-(float)Math.Round(camera.GetTopLeft().X), -(float)Math.Round(camera.GetTopLeft().Y), 0);//* Matrix.CreateScale(0.5f);
-            spriteBatch.Begin(SpriteSortMode.Deferred, samplerState: SamplerState.PointWrap, transformMatrix: transform);
+            spriteBatch.Begin(SpriteSortMode.BackToFront, samplerState: SamplerState.PointWrap, transformMatrix: transform);
             int startX = Math.Max(0, (int)camera.GetTopLeft().X / 8);
             int startY = Math.Max(0, (int)camera.GetTopLeft().Y / 8);
             int endX = Math.Min(World.tiles.GetLength(0), (int)(camera.GetTopLeft().X + graphics.PreferredBackBufferWidth) / 8 + 1);
@@ -3225,7 +3289,7 @@ namespace MyGame
                     {
                         continue;
                     }*/
-                    spriteBatch.Draw(tile.Texture, pos, tile.color);
+                    spriteBatch.Draw(tile.Texture, pos, null, tile.color, 0.0f ,Vector2.Zero, Vector2.One, SpriteEffects.None, 0.5f);
                 }
             }
 
@@ -3237,7 +3301,7 @@ namespace MyGame
                 
                 spriteBatch.Draw(
                     obj.Texture,
-                    obj.Position,
+                    obj.Position + obj.TextureOffset,
                     obj.SourceRectangle,
                     obj.Color,
                     obj.Rotation,
