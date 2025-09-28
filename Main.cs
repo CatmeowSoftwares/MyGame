@@ -95,7 +95,7 @@ namespace MyGame
             X2
         }
 
-        public static KeyboardState keyboardState;
+        public static KeyboardState keyboardState;  
         private static KeyboardState previousKeyboardState;
         public static bool HoveringUI { get { return hoveringUI; } set { hoveringUI = value; } }
         private static bool hoveringUI = false;
@@ -393,13 +393,27 @@ namespace MyGame
     }
     public class LightMap
     {
-        List<LightSource> lightSources = new List<LightSource>();
+        public static List<LightSource> lightSources = new List<LightSource>();
     }
     public class LightSource
     {
         public int x;
         public int y;
         public Color color;
+        public static Texture2D texture = null;
+        public Vector2 scale;
+        static LightSource()
+        {
+            texture = AssetManager.GetTexture("LightSource");
+        }
+        public LightSource(int x, int y, Vector2 scale, Color color)
+        {
+            this.x = x;
+            this.y = y;
+            this.color = color;
+            this.scale = scale;
+            LightMap.lightSources.Add(this);
+        }
 
     }
 
@@ -860,6 +874,7 @@ namespace MyGame
         }
         public void LoadContent(ContentManager content)
         {
+            LightSource = new LightSource((int)this.Position.X, (int)this.Position.Y, new Vector2(1.0f),Color.White);
             isMale = false;
             if (isMale)
             {
@@ -1382,6 +1397,17 @@ namespace MyGame
                 if (Velocity.X < 0.0f) Direction = -1;
                 else if (Velocity.X > 0.0f) Direction = 1; ;
             }
+
+
+            head.Color = this.Color;
+            torso.Color = this.Color;
+            leftHand.Color = this.Color;
+            rightHand.Color = this.Color;
+            legs.Color = this.Color;
+
+
+
+
             base.Update(gameTime);
         }
 
@@ -1393,7 +1419,7 @@ namespace MyGame
                         currentlyHeldItem.Texture,
                         currentlyHeldItem.Position + currentlyHeldItem.PositionOffset,
                         currentlyHeldItem.SourceRectangle,
-                        currentlyHeldItem.Color,
+                        this.Color,
                         currentlyHeldItem.Rotation,
                         currentlyHeldItem.Origin,
                         currentlyHeldItem.Scale,
@@ -1740,6 +1766,7 @@ namespace MyGame
                 Texture = AssetManager.GetTexture("Bullet");
             }
             this.Position = position;
+            LightSource = new LightSource((int)position.X, (int)position.Y, new Vector2(0.2f), Color.Orange);
             this.Rotation = rotation;
             this.Origin = GetSize() /2.0f;
             this.Velocity = Vector2.Transform(new Vector2(1000, 0), Matrix.CreateRotationZ(rotation));
@@ -2700,18 +2727,11 @@ namespace MyGame
             for (int x = 0; x < World.tiles.GetLength(0); ++x)
             {
                 stringBuilder.Clear();
-                for (int y = 0; y < World.tiles.GetLength(1); ++y)
+                for (int y = 100; y < World.tiles.GetLength(1); ++y)
                 {
-                    bool sky = y < (World.tiles.GetLength(0) * 2) / 3;
                     Tile.TileType type;
-                    if (sky)
-                    {
-                        type = Tile.TileType.NONE;
-                    }
-                    else
-                    {
-                        type = (Tile.TileType)Main.rand.Next(1, 3);
-                    }
+    
+                    type = (Tile.TileType)Main.rand.Next(1, 3);
                     Tile tile = new Tile(type, x, y);
                     tiles[x, y] = tile;
                     stringBuilder.Append(((int)type).ToString());
@@ -2913,6 +2933,8 @@ namespace MyGame
     public class GameObject : Object
     {
 
+        public LightSource LightSource { get { return lightSource; } set { lightSource = value; } }
+        private LightSource lightSource;
         public GameObject() : base()
         {
 
@@ -2926,6 +2948,12 @@ namespace MyGame
         {
 
         }
+        public override void Destroy()
+        {
+            LightMap.lightSources.Remove(this.LightSource);
+            base.Destroy();
+        }
+
 
         
     }
@@ -3195,7 +3223,7 @@ namespace MyGame
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
             graphics.SynchronizeWithVerticalRetrace = false;
-            IsFixedTimeStep = false;
+            IsFixedTimeStep = true;
             //graphics.IsFullScreen = true;
             //graphics.HardwareModeSwitch = false;
 
@@ -3313,6 +3341,14 @@ namespace MyGame
                 if (obj is GameObject)
                 {
                     GameObject gameObject = (GameObject)obj;
+                    LightSource light = gameObject.LightSource;
+
+                    if (light != null)
+                    {
+                        light.x = (int)gameObject.Position.X + (int)gameObject.RectangleOffset.X;
+                        light.y = (int)gameObject.Position.Y + (int)gameObject.RectangleOffset.Y;
+                        gameObject.LightSource = light;
+                    }
                     if (gameObject.Rectangle.Intersects(cursorRectangle))
                     {
                         gameObject.OnHover();
@@ -3632,6 +3668,9 @@ namespace MyGame
             GraphicsDevice.Clear(Color.Black);
             // TODO: Add your drawing code here
             Matrix transform = Matrix.CreateTranslation(-(float)Math.Round(camera.GetTopLeft().X), -(float)Math.Round(camera.GetTopLeft().Y), 0);//* Matrix.CreateScale(0.5f);
+
+
+
             spriteBatch.Begin(SpriteSortMode.BackToFront, samplerState: SamplerState.PointWrap, transformMatrix: transform);
             int startX = Math.Max(0, (int)camera.GetTopLeft().X / 8);
             int startY = Math.Max(0, (int)camera.GetTopLeft().Y / 8);
@@ -3692,8 +3731,37 @@ namespace MyGame
                 }
             }
             
+
+
+
+
+
+           
+
+
+
+
+
             //DrawColliders(spriteBatch);
             CombatText.DrawTexts(spriteBatch, spriteFont, gameTime);
+            spriteBatch.End();
+
+
+
+            spriteBatch.Begin(SpriteSortMode.Immediate, transformMatrix: transform);
+            spriteBatch.Draw(pixel, new Rectangle((int)camera.GetTopLeft().X, (int)camera.GetTopLeft().Y, graphics.PreferredBackBufferWidth + 1, graphics.PreferredBackBufferHeight + 1), Color.Black * 0.8f);
+            spriteBatch.End();
+
+
+            spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.Additive, SamplerState.LinearClamp, null, null, null, transform);
+
+            foreach (var light in LightMap.lightSources)
+            {
+                if (light.color.A == 0) continue;
+                Vector2 origin = new Vector2(LightSource.texture.Width / 2f, LightSource.texture.Height / 2f);
+                Color tint = light.color * 0.75f;
+                spriteBatch.Draw(LightSource.texture, new Vector2(light.x, light.y), null, tint, 0f, origin, light.scale, SpriteEffects.None, 0f);
+            }
             spriteBatch.End();
 
 
