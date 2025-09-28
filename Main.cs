@@ -8,19 +8,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace MyGame
 {
-    namespace Systenn
-    {
-        class Out
-        {
-            public static void println(String str)
-            {
-                Console.WriteLine(str);
-            }
-        }
-    }
+    
     public class Input
     {
         private static readonly Keys[] konamiCode =
@@ -204,21 +197,7 @@ namespace MyGame
 
 
 
-
-
-
-    public class HelloWorld
-    {
-        public static void main(String[] args)
-        {
-            Systenn.Out.println("Hello world!");
-        }
-    }
-
-
-
-
-                                                                                        
+                                            
 
     public class Boolean
     {
@@ -412,8 +391,17 @@ namespace MyGame
 
 
     }
+    public class LightMap
+    {
+        List<LightSource> lightSources = new List<LightSource>();
+    }
+    public class LightSource
+    {
+        public int x;
+        public int y;
+        public Color color;
 
-
+    }
 
     public class Tile
     {
@@ -442,7 +430,7 @@ namespace MyGame
             this.y = y;
             switch (tileType)
             {
-                case TileType.NONE: 
+                case TileType.NONE:
                     break;
                 case TileType.GRASS:
                     texture = AssetManager.GetTexture("GrassBlock");
@@ -957,6 +945,7 @@ namespace MyGame
             if (Input.IsKeyPressed(Keys.F11)) uiHidden = !uiHidden;
 
             Vector2 velocity = Velocity;
+            Vector2 position = Position;
 
 
             if (Input.IsKeyDown(Keys.A))
@@ -1000,6 +989,7 @@ namespace MyGame
             if (Input.IsKeyPressed(Keys.Space) && OnFloor)
             {
                 velocity.Y = JumpPower;
+                position.Y -= 8;
 
             }
 
@@ -1008,6 +998,7 @@ namespace MyGame
             velocity.X = Math.Clamp(velocity.X, -MaxSpeed, MaxSpeed);
             velocity.Y = Math.Clamp(velocity.Y, -MaxSpeed, MaxSpeed);
             this.Velocity = velocity;
+            this.Position = position;
 
 
 
@@ -1414,6 +1405,20 @@ namespace MyGame
             base.Draw(spriteBatch, gameTime);
         }
 
+
+
+
+        public string[] deathMessages =
+        {
+            "skill issue",
+            "MASSIVE skill issue"
+        };
+        public override void Destroy()
+        {
+            Position = Vector2.Zero;
+            Velocity = Vector2.Zero;
+            Health = MaxHealth;
+        }
         public Vector2 GetCenter()
         {
             return Position + new Vector2(16, 16);
@@ -1627,6 +1632,74 @@ namespace MyGame
 
 
     }
+
+
+
+    public class Text
+    {
+        private struct Char
+        {
+
+        }
+        private static string[] emojis =
+        {
+            ":heart:",
+            ":broken_heart:",
+            ":wilted_rose",
+        };
+        public static Text operator +(string text, Text text2)
+        {
+            return new Text("aaaa" + text);
+        }
+        public Text(string text)
+        {
+            Console.WriteLine(text);
+        }
+        public static void Test(string text = "MASSIVE skill issue :broken_heart::wilted_rose:")
+        {
+            string result = "";
+            result = text;
+            string[] split = text.Split();
+            for (int i = 0; i < split.Length; ++i)
+            {
+                bool start = false;
+                bool end = false;
+                if (split[i][0] != ':' && split[i][split[i].Length - 1] != ':')
+                {
+                    continue;
+                }
+                start = true;
+
+                for (int j = 0; j < emojis.Length; ++j)
+                {
+                    if (split[i] == emojis[j])
+                    {
+                        string emojiName = split[i].Replace(":", "");
+                        Texture2D emoji = AssetManager.GetTexture(emojiName);
+                        
+                    }
+                }
+
+
+
+            }
+            Console.WriteLine(result);
+        }
+        public static Text DrawText(string text)
+        {
+
+
+            return null;
+        }
+        private void RenderEmoji(string text)
+        {
+
+        }
+    }
+
+
+
+
 
     public class ItemSlot : Button
     {
@@ -2620,15 +2693,51 @@ namespace MyGame
 
         public static void CreateWorld()
         {
+            File.WriteAllText("world.femboy", "");
+            StringBuilder stringBuilder = new StringBuilder();
+            string[] content =  new string[2048];
+            string line = "";
             for (int x = 0; x < World.tiles.GetLength(0); ++x)
             {
-                for (int y = 100; y < World.tiles.GetLength(1); ++y)
+                stringBuilder.Clear();
+                for (int y = 0; y < World.tiles.GetLength(1); ++y)
                 {
-                    tiles[x, y] = new Tile((Tile.TileType)Main.rand.Next(1, 2), x, y);
+                    bool sky = y < (World.tiles.GetLength(0) * 2) / 3;
+                    Tile.TileType type;
+                    if (sky)
+                    {
+                        type = Tile.TileType.NONE;
+                    }
+                    else
+                    {
+                        type = (Tile.TileType)Main.rand.Next(1, 3);
+                    }
+                    Tile tile = new Tile(type, x, y);
+                    tiles[x, y] = tile;
+                    stringBuilder.Append(((int)type).ToString());
                 }
+                line = stringBuilder.ToString();
+                content[x] = line;
             }
+            File.WriteAllLines("world.femboy", content);
+
         }
 
+        public static void LoadWorld(string path)
+        {
+            string[] content = File.ReadAllLines(path);
+            Console.WriteLine(content);
+            for (int x = 0; x < content.Length; ++x)
+            {
+                string line = content[x];
+                for (int y = 0; y < line.Length; ++y)
+                {
+                    Tile.TileType type = (Tile.TileType)int.Parse(line[y].ToString());                                                   
+                    tiles[x, y] = new Tile(type, x, y);
+                }
+            }
+
+        }
     }
 
     public class Collision
@@ -2686,9 +2795,15 @@ namespace MyGame
             }
             else
             {
-                Tile tile = World.tiles[Math.Min(World.tiles.GetLength(0) - 1, (uint)position.X / 8), Math.Min(World.tiles.GetLength(1) - 1, (uint)position.Y / 8)];
-                obj.OnTileCollide(tile);
-
+                try
+                {
+                    Tile tile = World.tiles[Math.Min(World.tiles.GetLength(0) - 1, (uint)position.X / 8), Math.Min(World.tiles.GetLength(1) - 1, (uint)position.Y / 8)];
+                    obj.OnTileCollide(tile);
+                }
+                catch 
+                {
+                    
+                }
             }
 
             Vector2 currentPos = obj.Position + obj.RectangleOffset;
@@ -2721,8 +2836,15 @@ namespace MyGame
                 }
                 else
                 {
-                    Tile tile = World.tiles[Math.Min(World.tiles.GetLength(0) - 1, (int)groundPos.X / 8), Math.Min(World.tiles.GetLength(1) - 1, (int)groundPos.Y / 8)];
-                    obj.OnTileCollide(tile);
+                    try
+                    {
+                        Tile tile = World.tiles[Math.Min(World.tiles.GetLength(0) - 1, (int)groundPos.X / 8), Math.Min(World.tiles.GetLength(1) - 1, (int)groundPos.Y / 8)];
+                        obj.OnTileCollide(tile);
+                    }
+                    catch
+                    {
+                        // do nothing
+                    }
                 }
             }
             /*
@@ -3106,6 +3228,7 @@ namespace MyGame
             pixel.SetData(new Color[] { Color.White });
             test = new GameObject();
             player = new Player(UInt16.MaxValue);
+            player.Position = new Vector2(1024 * 8f, 1365.33333f * 8f);
             player.Initialize();
             button = new Button();
             button.Position = new Vector2(100.0f, 100.0f);
@@ -3140,8 +3263,11 @@ namespace MyGame
             player.LayerDepth = 0.01f;
             button.Texture = CreateRectangleTexture(button.Width, button.Height);
             enemy = new Enemy1(AssetManager.GetTexture("Reference"), new Vector2(128, 128), UInt16.MaxValue);
-            objects.Add(enemy); 
-            World.CreateWorld();
+            objects.Add(enemy);
+            if (File.Exists("world.femboy"))
+                World.LoadWorld("world.femboy");
+            else
+                World.CreateWorld();
             objects.Add(player);
             objects.Add(button);
             objects.Add(progressBar);
